@@ -1,6 +1,7 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local DataStoreService = game:GetService("DataStoreService")
+local MarketplaceService = game:GetService("MarketplaceService")
 local Lighting = game:GetService("Lighting")
 local TweenService = game:GetService("TweenService")
 
@@ -282,6 +283,74 @@ local function teleportToLobby(player)
         character:PivotTo(CFrame.new(Config.LOBBY_SPAWN + Vector3.new(0, 2, 0)))
     end
 end
+
+
+local vipOwners = {}
+
+local function applyVipCosmetics(player, character)
+    if not vipOwners[player] or not character then return end
+    local head = character:FindFirstChild("Head")
+    local root = character:FindFirstChild("HumanoidRootPart")
+    if head and not head:FindFirstChild("VIPTag") then
+        local tag = Instance.new("BillboardGui")
+        tag.Name = "VIPTag"
+        tag.Size = UDim2.fromOffset(90, 28)
+        tag.StudsOffset = Vector3.new(0, 2.8, 0)
+        tag.AlwaysOnTop = true
+        tag.Parent = head
+        local label = Instance.new("TextLabel")
+        label.Size = UDim2.fromScale(1, 1)
+        label.BackgroundTransparency = 1
+        label.Font = Enum.Font.GothamBlack
+        label.Text = "★ VIP"
+        label.TextColor3 = Color3.fromRGB(255, 215, 62)
+        label.TextStrokeTransparency = 0.35
+        label.TextScaled = true
+        label.Parent = tag
+    end
+    if root and not root:FindFirstChild("VIPTrail") then
+        local top = Instance.new("Attachment")
+        top.Name = "VIPTrailTop"
+        top.Position = Vector3.new(0, 0.9, 0)
+        top.Parent = root
+        local bottom = Instance.new("Attachment")
+        bottom.Name = "VIPTrailBottom"
+        bottom.Position = Vector3.new(0, -0.9, 0)
+        bottom.Parent = root
+        local trail = Instance.new("Trail")
+        trail.Name = "VIPTrail"
+        trail.Attachment0 = top
+        trail.Attachment1 = bottom
+        trail.Color = ColorSequence.new(Color3.fromRGB(255, 220, 72), Color3.fromRGB(73, 225, 245))
+        trail.Lifetime = 0.35
+        trail.LightEmission = 0.8
+        trail.MinLength = 0.1
+        trail.Parent = root
+    end
+end
+
+local function refreshVip(player)
+    if Config.VIP_GAME_PASS_ID <= 0 then return end
+    local ok, owns = pcall(function()
+        return MarketplaceService:UserOwnsGamePassAsync(player.UserId, Config.VIP_GAME_PASS_ID)
+    end)
+    if not ok then
+        warn("[FloorIsLava] Could not verify VIP pass for " .. player.Name)
+        return
+    end
+    vipOwners[player] = owns
+    if owns and player.Character then
+        applyVipCosmetics(player, player.Character)
+    end
+end
+
+MarketplaceService.PromptGamePassPurchaseFinished:Connect(function(player, passId, purchased)
+    if passId ~= Config.VIP_GAME_PASS_ID or not purchased then return end
+    task.spawn(function()
+        task.wait(1)
+        refreshVip(player)
+    end)
+end)
 
 local function loadStats(player)
     local leaderstats = Instance.new("Folder")
@@ -876,16 +945,22 @@ end
 
 Players.PlayerAdded:Connect(function(player)
     loadStats(player)
-    player.CharacterAdded:Connect(function()
+    task.spawn(refreshVip, player)
+    player.CharacterAdded:Connect(function(character)
         task.wait(0.25)
         if not (roundActive and alive[player]) then teleportToLobby(player) end
+        if vipOwners[player] then applyVipCosmetics(player, character) end
     end)
-    if player.Character then teleportToLobby(player) end
+    if player.Character then
+        teleportToLobby(player)
+        if vipOwners[player] then applyVipCosmetics(player, player.Character) end
+    end
 end)
 
 Players.PlayerRemoving:Connect(function(player)
     alive[player] = nil
     participants[player] = nil
+    vipOwners[player] = nil
     saveStats(player)
 end)
 
