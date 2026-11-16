@@ -232,6 +232,22 @@ create("TextLabel", {
     TextSize = 10,
     TextXAlignment = Enum.TextXAlignment.Left,
 }, aliveCard)
+local function updateMobileLayout()
+    local camera = workspace.CurrentCamera
+    if not camera then return end
+    if camera.ViewportSize.X < 760 then
+        stats.Position = UDim2.new(0, 12, 0, 138)
+        aliveCard.Position = UDim2.new(1, -12, 0, 138)
+    else
+        stats.Position = UDim2.new(0, 22, 0, 22)
+        aliveCard.Position = UDim2.new(1, -22, 0, 22)
+    end
+end
+updateMobileLayout()
+if workspace.CurrentCamera then
+    workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(updateMobileLayout)
+end
+
 local aliveLabel = create("TextLabel", {
     BackgroundTransparency = 1,
     Position = UDim2.fromOffset(12, 21),
