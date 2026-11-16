@@ -12,6 +12,8 @@ A round-based Roblox survival game. Climb a shifting obstacle arena, dodge movin
 - Lava and sweeper contact eliminate players.
 - Coins for participation and a larger reward for the winner.
 - Wins and coins saved with DataStore.
+- Global top-10 wins leaderboard displayed in the lobby and refreshed every 60 seconds.
+- Global ranking is backed by an OrderedDataStore and updated when a player wins.
 
 ### Visual direction
 - Stylized volcanic / industrial world built from standard Roblox Parts.
@@ -51,7 +53,8 @@ The code has been committed, but this build has not been executed in Roblox Stud
 - Players joining mid-round remain in the lobby until the next round.
 - A winner receives exactly one win reward.
 - Participation rewards are granted once per participant.
-- DataStore access works in a published test experience.
+- DataStore and OrderedDataStore access work in a published test experience.
+- Global leaderboard displays the correct top 10 players and refreshes without errors.
 - HUD and result panel remain readable on phone aspect ratios.
 
 ## Development principles
