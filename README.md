@@ -1,16 +1,29 @@
 # FLOOR IS LAVA
 
-A round-based Roblox multiplayer survival game. Players climb a simple obstacle arena while lava rises from below. The last surviving player wins.
+A round-based Roblox survival game. Climb a shifting obstacle arena, stay above the rising lava, and be the last player standing.
 
-## Current prototype
+## Current build
 
-- Generated lobby and first arena built from standard Roblox Parts.
-- Automatic intermission and round countdown.
-- Rising lava that eliminates players on contact.
-- Last-player-standing win condition.
-- Coins and wins in the Roblox leaderboard.
-- DataStore persistence for coins and wins.
-- Basic round HUD.
+### Gameplay
+- Automatic multiplayer rounds (2+ players).
+- Intermission, countdown, rising-lava survival, winner detection and lobby return.
+- Three arena layouts selected at random: Volcano Heights, Neon Foundry and Skyline Ruins.
+- Coins for participation and a larger reward for the winner.
+- Wins and coins saved with DataStore.
+
+### Visual direction
+- Stylized volcanic / industrial world built from standard Roblox Parts.
+- Reworked lobby with a central stage, neon trims, signs and colored lighting.
+- Arena foundations, varied platforms, towers and glowing edge details.
+- Neon lava with a PointLight and particle sparks.
+- Atmosphere, color grading and bloom.
+
+### Interface
+- Responsive round HUD with phase, countdown and objective text.
+- Coins and wins counters.
+- Live survivor count.
+- Animated event notifications for round starts and results.
+- Scales down for narrow screens.
 
 ## Project setup
 
@@ -21,17 +34,24 @@ This repository uses [Rojo](https://rojo.space/) to sync Luau files into Roblox 
 3. Run `rojo serve` from the repository directory.
 4. Connect the Rojo plugin in Roblox Studio.
 5. Publish the experience and enable **Game Settings → Security → Enable Studio Access to API Services** to test DataStores.
-6. Use **Test → Start** with at least two players to test the multiplayer round.
+6. Use **Test → Start** with at least two players to test multiplayer rounds.
 
-For solo testing only, temporarily set `MIN_PLAYERS = 1` in `src/ReplicatedStorage/Shared/Config.lua`. Keep it at 2 for public servers.
+For solo testing only, temporarily set `MIN_PLAYERS = 1` in `src/ReplicatedStorage/Shared/Config.lua`. Restore it to 2 before publishing.
 
-## Current limitations
+## Important testing notes
 
-This is an early playable foundation, not a release build. It has one block-based arena, a basic HUD, and placeholder economy. Mobile layout, spectator flow, anti-exploit hardening, shop UI, multiple maps, sound, effects, and full multiplayer testing are still to be done.
+The repository has been updated through source files, but the current build still needs a Roblox Studio test pass. In particular, verify:
+- All three arenas spawn correctly and are traversable.
+- Lava contact eliminates players reliably on desktop and mobile.
+- Players who join during a round wait safely in the lobby.
+- Respawns, winner rewards and participation rewards happen only once.
+- DataStore access works in a published test experience.
+- HUD remains readable on phone aspect ratios.
 
 ## Development principles
 
-- Keep maps built from simple Roblox Parts.
-- Keep round state, eliminations, and rewards server-authoritative.
-- Prefer new arena layouts and gameplay modifiers over expensive custom assets.
-- Add monetization only after the core round loop is tested and fun.
+- Prefer strong composition, lighting, color and UI over complex custom models.
+- Keep maps built from simple, performant Roblox Parts.
+- Keep round state, eliminations and rewards server-authoritative.
+- Add new map layouts and round modifiers before adding expensive assets.
+- Add monetization only after the core loop is tested and enjoyable.
