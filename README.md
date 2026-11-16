@@ -1,28 +1,32 @@
 # FLOOR IS LAVA
 
-A round-based Roblox survival game. Climb a shifting obstacle arena, stay above the rising lava, and be the last player standing.
+A round-based Roblox survival game. Climb a shifting obstacle arena, dodge moving sweepers, stay above the rising lava, and be the last player standing.
 
 ## Current build
 
 ### Gameplay
 - Automatic multiplayer rounds (2+ players).
-- Intermission, countdown, rising-lava survival, winner detection and lobby return.
+- Intermission, survival timer, rising lava, winner detection and lobby return.
 - Three arena layouts selected at random: Volcano Heights, Neon Foundry and Skyline Ruins.
+- Moving neon sweepers on elevated platforms.
+- Lava and sweeper contact eliminate players.
 - Coins for participation and a larger reward for the winner.
 - Wins and coins saved with DataStore.
 
 ### Visual direction
 - Stylized volcanic / industrial world built from standard Roblox Parts.
-- Reworked lobby with a central stage, neon trims, signs and colored lighting.
-- Arena foundations, varied platforms, towers and glowing edge details.
-- Neon lava with a PointLight and particle sparks.
+- Lobby with a central stage, neon trims, signs and colored lighting.
+- Three platform layouts with different silhouettes and accent colors.
+- Arena foundations, towers, glowing platform edges and moving hazards.
+- Neon lava with PointLight and particle sparks.
 - Atmosphere, color grading and bloom.
 
 ### Interface
 - Responsive round HUD with phase, countdown and objective text.
 - Coins and wins counters.
-- Live survivor count.
-- Animated event notifications for round starts and results.
+- Live survivor count and current arena badge.
+- Animated event notifications.
+- Large animated victory / round-result panel.
 - Scales down for narrow screens.
 
 ## Project setup
@@ -38,20 +42,22 @@ This repository uses [Rojo](https://rojo.space/) to sync Luau files into Roblox 
 
 For solo testing only, temporarily set `MIN_PLAYERS = 1` in `src/ReplicatedStorage/Shared/Config.lua`. Restore it to 2 before publishing.
 
-## Important testing notes
+## Required Studio test pass
 
-The repository has been updated through source files, but the current build still needs a Roblox Studio test pass. In particular, verify:
-- All three arenas spawn correctly and are traversable.
-- Lava contact eliminates players reliably on desktop and mobile.
-- Players who join during a round wait safely in the lobby.
-- Respawns, winner rewards and participation rewards happen only once.
+The code has been committed, but this build has not been executed in Roblox Studio. Verify:
+- All three arenas load and all platform jumps are reachable.
+- Moving sweepers rotate and eliminate players on contact.
+- Lava rises at the intended speed and eliminates players reliably.
+- Players joining mid-round remain in the lobby until the next round.
+- A winner receives exactly one win reward.
+- Participation rewards are granted once per participant.
 - DataStore access works in a published test experience.
-- HUD remains readable on phone aspect ratios.
+- HUD and result panel remain readable on phone aspect ratios.
 
 ## Development principles
 
 - Prefer strong composition, lighting, color and UI over complex custom models.
 - Keep maps built from simple, performant Roblox Parts.
 - Keep round state, eliminations and rewards server-authoritative.
-- Add new map layouts and round modifiers before adding expensive assets.
+- Add new maps and round modifiers before expensive assets.
 - Add monetization only after the core loop is tested and enjoyable.
