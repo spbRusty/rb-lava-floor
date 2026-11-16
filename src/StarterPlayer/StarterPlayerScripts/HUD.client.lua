@@ -1,64 +1,325 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
 
 local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
 local roundState = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("RoundState")
 
-local gui = Instance.new("ScreenGui")
-gui.Name = "FloorIsLavaHUD"
-gui.ResetOnSpawn = false
-gui.IgnoreGuiInset = true
-gui.Parent = player:WaitForChild("PlayerGui")
+local COLORS = {
+    panel = Color3.fromRGB(18, 24, 38),
+    panelLight = Color3.fromRGB(31, 41, 61),
+    white = Color3.fromRGB(246, 248, 255),
+    muted = Color3.fromRGB(160, 174, 198),
+    orange = Color3.fromRGB(255, 112, 54),
+    gold = Color3.fromRGB(255, 207, 100),
+    cyan = Color3.fromRGB(92, 218, 239),
+    green = Color3.fromRGB(91, 225, 157),
+    red = Color3.fromRGB(255, 82, 82),
+}
 
-local panel = Instance.new("Frame")
-panel.Name = "StatusPanel"
-panel.AnchorPoint = Vector2.new(0.5, 0)
-panel.Position = UDim2.fromScale(0.5, 0.035)
-panel.Size = UDim2.fromOffset(360, 92)
-panel.BackgroundColor3 = Color3.fromRGB(22, 27, 38)
-panel.BackgroundTransparency = 0.12
-panel.BorderSizePixel = 0
-panel.Parent = gui
+local function create(className, properties, parent)
+    local object = Instance.new(className)
+    for key, value in pairs(properties) do
+        object[key] = value
+    end
+    object.Parent = parent
+    return object
+end
 
-local corner = Instance.new("UICorner")
-corner.CornerRadius = UDim.new(0, 14)
-corner.Parent = panel
+local function corner(parent, radius)
+    create("UICorner", { CornerRadius = UDim.new(0, radius) }, parent)
+end
 
-local title = Instance.new("TextLabel")
-title.Name = "Title"
-title.BackgroundTransparency = 1
-title.Position = UDim2.fromOffset(12, 8)
-title.Size = UDim2.new(1, -24, 0, 34)
-title.Font = Enum.Font.GothamBold
-title.Text = "FLOOR IS LAVA"
-title.TextColor3 = Color3.fromRGB(255, 115, 55)
-title.TextScaled = true
-title.Parent = panel
+local function stroke(parent, color, transparency, thickness)
+    return create("UIStroke", {
+        Color = color,
+        Transparency = transparency or 0,
+        Thickness = thickness or 1,
+        ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+    }, parent)
+end
 
-local message = Instance.new("TextLabel")
-message.Name = "Message"
-message.BackgroundTransparency = 1
-message.Position = UDim2.fromOffset(12, 43)
-message.Size = UDim2.new(1, -24, 0, 22)
-message.Font = Enum.Font.GothamMedium
-message.Text = "Подключение..."
-message.TextColor3 = Color3.fromRGB(245, 245, 245)
-message.TextScaled = true
-message.Parent = panel
+local gui = create("ScreenGui", {
+    Name = "FloorIsLavaHUD",
+    ResetOnSpawn = false,
+    IgnoreGuiInset = true,
+    DisplayOrder = 20,
+    ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
+}, playerGui)
 
-local timer = Instance.new("TextLabel")
-timer.Name = "Timer"
-timer.BackgroundTransparency = 1
-timer.AnchorPoint = Vector2.new(1, 0)
-timer.Position = UDim2.new(1, -12, 0, 8)
-timer.Size = UDim2.fromOffset(54, 24)
-timer.Font = Enum.Font.GothamBold
-timer.Text = ""
-timer.TextColor3 = Color3.fromRGB(255, 220, 120)
-timer.TextScaled = true
-timer.Parent = panel
+local scale = create("UIScale", { Scale = 1 }, gui)
+local function updateScale()
+    local camera = workspace.CurrentCamera
+    if not camera then return end
+    local width = camera.ViewportSize.X
+    scale.Scale = math.clamp(width / 1280, 0.72, 1)
+end
+updateScale()
+workspace:GetPropertyChangedSignal("CurrentCamera"):Connect(updateScale)
+if workspace.CurrentCamera then
+    workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(updateScale)
+end
 
+-- Top status card
+local top = create("Frame", {
+    Name = "MatchPanel",
+    AnchorPoint = Vector2.new(0.5, 0),
+    Position = UDim2.new(0.5, 0, 0, 22),
+    Size = UDim2.fromOffset(430, 112),
+    BackgroundColor3 = COLORS.panel,
+    BackgroundTransparency = 0.06,
+    BorderSizePixel = 0,
+}, gui)
+corner(top, 18)
+stroke(top, Color3.fromRGB(91, 111, 145), 0.55, 1)
+
+local topGradient = create("UIGradient", {
+    Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(31, 42, 63)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(16, 21, 34)),
+    }),
+    Rotation = 90,
+}, top)
+
+create("TextLabel", {
+    Name = "Eyebrow",
+    BackgroundTransparency = 1,
+    Position = UDim2.fromOffset(18, 10),
+    Size = UDim2.new(1, -36, 0, 18),
+    Font = Enum.Font.GothamBold,
+    Text = "SURVIVAL ROUND",
+    TextColor3 = COLORS.orange,
+    TextSize = 11,
+    TextXAlignment = Enum.TextXAlignment.Left,
+    TextTransparency = 0.05,
+}, top)
+
+local phaseLabel = create("TextLabel", {
+    Name = "Phase",
+    BackgroundTransparency = 1,
+    Position = UDim2.fromOffset(18, 30),
+    Size = UDim2.new(1, -36, 0, 34),
+    Font = Enum.Font.GothamBlack,
+    Text = "FLOOR IS LAVA",
+    TextColor3 = COLORS.white,
+    TextSize = 25,
+    TextXAlignment = Enum.TextXAlignment.Left,
+    TextTruncate = Enum.TextTruncate.AtEnd,
+}, top)
+
+local timerPill = create("Frame", {
+    Name = "TimerPill",
+    AnchorPoint = Vector2.new(1, 0),
+    Position = UDim2.new(1, -14, 0, 25),
+    Size = UDim2.fromOffset(86, 43),
+    BackgroundColor3 = Color3.fromRGB(75, 40, 32),
+    BorderSizePixel = 0,
+}, top)
+corner(timerPill, 12)
+local timerLabel = create("TextLabel", {
+    BackgroundTransparency = 1,
+    Size = UDim2.fromScale(1, 1),
+    Font = Enum.Font.GothamBlack,
+    Text = "--:--",
+    TextColor3 = COLORS.gold,
+    TextSize = 21,
+}, timerPill)
+
+local subtitle = create("TextLabel", {
+    Name = "Subtitle",
+    BackgroundTransparency = 1,
+    Position = UDim2.fromOffset(18, 70),
+    Size = UDim2.new(1, -36, 0, 24),
+    Font = Enum.Font.GothamMedium,
+    Text = "Waiting for players...",
+    TextColor3 = COLORS.muted,
+    TextSize = 13,
+    TextXAlignment = Enum.TextXAlignment.Left,
+    TextTruncate = Enum.TextTruncate.AtEnd,
+}, top)
+
+-- Left-side stat chips
+local stats = create("Frame", {
+    Name = "Stats",
+    Position = UDim2.new(0, 22, 0, 22),
+    Size = UDim2.fromOffset(164, 94),
+    BackgroundTransparency = 1,
+}, gui)
+
+local function makeStat(name, y, label, value, accent)
+    local card = create("Frame", {
+        Name = name,
+        Position = UDim2.fromOffset(0, y),
+        Size = UDim2.fromOffset(164, 42),
+        BackgroundColor3 = COLORS.panel,
+        BackgroundTransparency = 0.06,
+        BorderSizePixel = 0,
+    }, stats)
+    corner(card, 12)
+    stroke(card, accent, 0.65, 1)
+    create("TextLabel", {
+        BackgroundTransparency = 1,
+        Position = UDim2.fromOffset(12, 5),
+        Size = UDim2.fromOffset(64, 30),
+        Font = Enum.Font.GothamBold,
+        Text = label,
+        TextColor3 = COLORS.muted,
+        TextSize = 11,
+        TextXAlignment = Enum.TextXAlignment.Left,
+    }, card)
+    local valueLabel = create("TextLabel", {
+        Name = "Value",
+        BackgroundTransparency = 1,
+        AnchorPoint = Vector2.new(1, 0.5),
+        Position = UDim2.new(1, -12, 0.5, 0),
+        Size = UDim2.fromOffset(72, 30),
+        Font = Enum.Font.GothamBlack,
+        Text = "0",
+        TextColor3 = accent,
+        TextSize = 18,
+        TextXAlignment = Enum.TextXAlignment.Right,
+    }, card)
+    return valueLabel
+end
+
+local coinsValue = makeStat("Coins", 0, "COINS", "0", COLORS.gold)
+local winsValue = makeStat("Wins", 50, "WINS", "0", COLORS.cyan)
+
+local function bindStats()
+    local leaderstats = player:FindFirstChild("leaderstats")
+    if not leaderstats then return end
+    local coins = leaderstats:FindFirstChild("Coins")
+    local wins = leaderstats:FindFirstChild("Wins")
+    if coins then
+        coinsValue.Text = tostring(coins.Value)
+        coins:GetPropertyChangedSignal("Value"):Connect(function()
+            coinsValue.Text = tostring(coins.Value)
+        end)
+    end
+    if wins then
+        winsValue.Text = tostring(wins.Value)
+        wins:GetPropertyChangedSignal("Value"):Connect(function()
+            winsValue.Text = tostring(wins.Value)
+        end)
+    end
+end
+player.ChildAdded:Connect(function(child)
+    if child.Name == "leaderstats" then task.defer(bindStats) end
+end)
+task.defer(bindStats)
+
+-- Alive counter, right side
+local aliveCard = create("Frame", {
+    Name = "AliveCard",
+    AnchorPoint = Vector2.new(1, 0),
+    Position = UDim2.new(1, -22, 0, 22),
+    Size = UDim2.fromOffset(142, 58),
+    BackgroundColor3 = COLORS.panel,
+    BackgroundTransparency = 0.06,
+    BorderSizePixel = 0,
+}, gui)
+corner(aliveCard, 14)
+stroke(aliveCard, COLORS.green, 0.65, 1)
+create("TextLabel", {
+    BackgroundTransparency = 1,
+    Position = UDim2.fromOffset(12, 7),
+    Size = UDim2.fromOffset(118, 16),
+    Font = Enum.Font.GothamBold,
+    Text = "SURVIVORS",
+    TextColor3 = COLORS.muted,
+    TextSize = 10,
+    TextXAlignment = Enum.TextXAlignment.Left,
+}, aliveCard)
+local aliveLabel = create("TextLabel", {
+    BackgroundTransparency = 1,
+    Position = UDim2.fromOffset(12, 21),
+    Size = UDim2.fromOffset(118, 29),
+    Font = Enum.Font.GothamBlack,
+    Text = "--",
+    TextColor3 = COLORS.green,
+    TextSize = 22,
+    TextXAlignment = Enum.TextXAlignment.Left,
+}, aliveCard)
+
+-- Bottom toast
+local toast = create("Frame", {
+    Name = "Toast",
+    AnchorPoint = Vector2.new(0.5, 1),
+    Position = UDim2.new(0.5, 0, 1, -34),
+    Size = UDim2.fromOffset(360, 54),
+    BackgroundColor3 = COLORS.panel,
+    BackgroundTransparency = 1,
+    BorderSizePixel = 0,
+    Visible = false,
+}, gui)
+corner(toast, 14)
+stroke(toast, COLORS.orange, 0.35, 1)
+local toastText = create("TextLabel", {
+    BackgroundTransparency = 1,
+    Size = UDim2.new(1, -24, 1, 0),
+    Position = UDim2.fromOffset(12, 0),
+    Font = Enum.Font.GothamBold,
+    Text = "",
+    TextColor3 = COLORS.white,
+    TextSize = 16,
+    TextTransparency = 1,
+    TextWrapped = true,
+}, toast)
+
+local toastToken = 0
+local function showToast(text, color)
+    toastToken += 1
+    local token = toastToken
+    toast.Visible = true
+    toastText.Text = text
+    toastText.TextColor3 = color or COLORS.white
+    toast.BackgroundTransparency = 1
+    toastText.TextTransparency = 1
+    TweenService:Create(toast, TweenInfo.new(0.22, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+        BackgroundTransparency = 0.05,
+    }):Play()
+    TweenService:Create(toastText, TweenInfo.new(0.22), { TextTransparency = 0 }):Play()
+    task.delay(3, function()
+        if token ~= toastToken then return end
+        TweenService:Create(toast, TweenInfo.new(0.25), { BackgroundTransparency = 1 }):Play()
+        TweenService:Create(toastText, TweenInfo.new(0.25), { TextTransparency = 1 }):Play()
+        task.wait(0.28)
+        if token == toastToken then toast.Visible = false end
+    end)
+end
+
+local previousPhase = ""
 roundState.OnClientEvent:Connect(function(state)
-    message.Text = state.Message or ""
-    timer.Text = state.TimeLeft and state.TimeLeft > 0 and tostring(state.TimeLeft) or ""
+    local phase = state.Phase or "Waiting"
+    local message = state.Message or ""
+    local timeLeft = tonumber(state.TimeLeft) or 0
+    phaseLabel.Text = phase == "Round" and "SURVIVE!" or phase == "Winner" and "VICTORY!" or phase == "Finished" and "ROUND OVER" or phase == "Intermission" and "GET READY" or "FLOOR IS LAVA"
+    subtitle.Text = message
+    timerLabel.Text = timeLeft > 0 and string.format("%02d:%02d", math.floor(timeLeft / 60), timeLeft % 60) or "--:--"
+    aliveLabel.Text = tostring(state.Alive or 0)
+    timerPill.BackgroundColor3 = phase == "Round" and Color3.fromRGB(83, 39, 29) or Color3.fromRGB(43, 53, 73)
+
+    if phase == "Winner" then
+        showToast(message, COLORS.gold)
+    elseif phase == "Finished" then
+        showToast(message, COLORS.orange)
+    elseif phase == "Round" and previousPhase ~= "Round" then
+        showToast("The lava is rising. Keep moving!", COLORS.orange)
+    elseif phase == "Intermission" and previousPhase ~= "Intermission" then
+        showToast("Next round is coming. Get ready!", COLORS.cyan)
+    end
+    previousPhase = phase
+end)
+
+-- Subtle timer pulse when the round is active
+local pulseTime = 0
+RunService.RenderStepped:Connect(function(dt)
+    pulseTime += dt
+    if timerPill.BackgroundColor3 == Color3.fromRGB(83, 39, 29) then
+        timerPill.BackgroundTransparency = 0.04 + (math.sin(pulseTime * 3) + 1) * 0.035
+    else
+        timerPill.BackgroundTransparency = 0
+    end
 end)
