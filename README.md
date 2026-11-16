@@ -5,9 +5,11 @@ A round-based Roblox survival game. Climb a shifting obstacle arena, dodge movin
 ## Current build
 
 ### Gameplay
-- Automatic multiplayer rounds (2+ players).
+- Automatic rounds from one real player; two lightweight NPC rivals join solo sessions.
+- Automatic multiplayer rounds; NPC rivals are disabled when two or more real players are present.
 - Intermission, survival timer, rising lava, winner detection and lobby return.
-- Three arena layouts selected at random: Volcano Heights, Neon Foundry and Skyline Ruins.
+- A procedural arena generator creates a fresh sector each round, with randomized lane count, platform positions, heights, sizes, colors and hazard placement.
+- Every platform layer has at least two reachable upward choices; platform spacing and height steps are constrained for standard Roblox jumping.
 - Moving neon sweepers on elevated platforms.
 - Lava and sweeper contact eliminate players.
 - Coins for participation and a larger reward for the winner.
@@ -42,15 +44,17 @@ This repository uses [Rojo](https://rojo.space/) to sync Luau files into Roblox 
 5. Publish the experience and enable **Game Settings → Security → Enable Studio Access to API Services** to test DataStores.
 6. Use **Test → Start** with at least two players to test multiplayer rounds.
 
-For solo testing only, temporarily set `MIN_PLAYERS = 1` in `src/ReplicatedStorage/Shared/Config.lua`. Restore it to 2 before publishing.
+The game starts with one real player and adds two NPC rivals in solo sessions. When two or more real players are present, NPC rivals are not spawned.
 
 While the place is unpublished, DataStores are unavailable: the server logs a warning and the match loop keeps running without saving stats or the global leaderboard, so local Studio playtests work without API access.
 
 ## Required Studio test pass
 
-The code has been committed, but this build has not been executed in Roblox Studio. Verify:
-- All three arenas load and all platform jumps are reachable.
-- Moving sweepers rotate and eliminate players on contact.
+Studio verification is required after each gameplay update. Verify:
+- Procedural sectors vary between rounds and all generated platform routes remain jumpable.
+- Each platform offers at least two upward route choices.
+- Two NPC rivals spawn only when exactly one real player is present and can climb the generated platforms.
+- Moving sweepers rotate and eliminate both players and NPC rivals on contact.
 - Lava rises at the intended speed and eliminates players reliably.
 - Players joining mid-round remain in the lobby until the next round.
 - A winner receives exactly one win reward.
