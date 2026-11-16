@@ -8,15 +8,15 @@ local playerGui = player:WaitForChild("PlayerGui")
 local roundState = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("RoundState")
 
 local COLORS = {
-    panel = Color3.fromRGB(18, 24, 38),
-    panelLight = Color3.fromRGB(31, 41, 61),
-    white = Color3.fromRGB(246, 248, 255),
-    muted = Color3.fromRGB(160, 174, 198),
-    orange = Color3.fromRGB(255, 112, 54),
-    gold = Color3.fromRGB(255, 207, 100),
-    cyan = Color3.fromRGB(92, 218, 239),
-    green = Color3.fromRGB(91, 225, 157),
-    red = Color3.fromRGB(255, 82, 82),
+    panel = Color3.fromRGB(38, 64, 108),
+    panelLight = Color3.fromRGB(57, 91, 145),
+    white = Color3.fromRGB(255, 255, 255),
+    muted = Color3.fromRGB(207, 222, 247),
+    orange = Color3.fromRGB(255, 132, 48),
+    gold = Color3.fromRGB(255, 220, 72),
+    cyan = Color3.fromRGB(73, 225, 245),
+    green = Color3.fromRGB(117, 235, 100),
+    red = Color3.fromRGB(255, 76, 91),
 }
 
 local function create(className, properties, parent)
@@ -73,12 +73,12 @@ local top = create("Frame", {
     BorderSizePixel = 0,
 }, gui)
 corner(top, 18)
-stroke(top, Color3.fromRGB(91, 111, 145), 0.55, 1)
+stroke(top, Color3.fromRGB(113, 183, 255), 0.25, 1.5)
 
 local topGradient = create("UIGradient", {
     Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(31, 42, 63)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(16, 21, 34)),
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(65, 104, 164)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(32, 54, 94)),
     }),
     Rotation = 90,
 }, top)
@@ -114,7 +114,7 @@ local timerPill = create("Frame", {
     AnchorPoint = Vector2.new(1, 0),
     Position = UDim2.new(1, -14, 0, 25),
     Size = UDim2.fromOffset(86, 43),
-    BackgroundColor3 = Color3.fromRGB(75, 40, 32),
+    BackgroundColor3 = Color3.fromRGB(156, 72, 34),
     BorderSizePixel = 0,
 }, top)
 corner(timerPill, 12)
@@ -295,7 +295,7 @@ local resultCard = create("Frame", {
 corner(resultCard, 22)
 stroke(resultCard, COLORS.gold, 0.25, 2)
 create("UIGradient", {
-    Color = ColorSequence.new(Color3.fromRGB(39, 48, 68), Color3.fromRGB(17, 22, 35)),
+    Color = ColorSequence.new(Color3.fromRGB(73, 104, 161), Color3.fromRGB(34, 55, 96)),
     Rotation = 90,
 }, resultCard)
 local resultScale = create("UIScale", { Scale = 0.82 }, resultCard)
@@ -418,7 +418,7 @@ roundState.OnClientEvent:Connect(function(state)
     timerLabel.Text = timeLeft > 0 and string.format("%02d:%02d", math.floor(timeLeft / 60), timeLeft % 60) or "--:--"
     aliveLabel.Text = tostring(state.Alive or 0)
     mapLabel.Text = "ARENA  •  " .. string.upper(state.Map or "UNKNOWN")
-    timerPill.BackgroundColor3 = phase == "Round" and Color3.fromRGB(83, 39, 29) or Color3.fromRGB(43, 53, 73)
+    timerPill.BackgroundColor3 = phase == "Round" and Color3.fromRGB(166, 75, 35) or Color3.fromRGB(48, 83, 137)
 
     if phase == "Winner" then
         showToast(message, COLORS.gold)
@@ -438,7 +438,7 @@ end)
 local pulseTime = 0
 RunService.RenderStepped:Connect(function(dt)
     pulseTime += dt
-    if timerPill.BackgroundColor3 == Color3.fromRGB(83, 39, 29) then
+    if timerPill.BackgroundColor3 == Color3.fromRGB(166, 75, 35) then
         timerPill.BackgroundTransparency = 0.04 + (math.sin(pulseTime * 3) + 1) * 0.035
     else
         timerPill.BackgroundTransparency = 0
