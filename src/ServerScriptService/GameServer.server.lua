@@ -363,7 +363,7 @@ local function buildArena()
     currentMapName = string.format("SECTOR %04d", sectorNumber)
 
     local center = Config.ARENA_CENTER
-    local accentChoices = {PALETTE.orange, PALETTE.cyan, PALETTE.gold, PALETTE.green}
+    local accentChoices = {PALETTE.orange, PALETTE.cyan, PALETTE.gold, PALETTE.green, PALETTE.purple, PALETTE.pink}
     local accent = accentChoices[rng:NextInteger(1, #accentChoices)]
     local rotationAngle = rng:NextNumber(0, math.pi * 2)
     local rotationCos = math.cos(rotationAngle)
