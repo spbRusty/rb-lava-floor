@@ -374,7 +374,7 @@ local function buildArena()
     -- Adjacent lanes are close enough for a normal Roblox jump with a modest jump-power boost.
     local previousDepth = 2.5
     for layer = 1, layerCount do
-        local depth = previousDepth + rng:NextNumber(9.2, 9.8)
+        local depth = previousDepth + rng:NextNumber(9.8, 10.4)
         previousDepth = depth
         local y = 5 + layer * verticalStep
         local layerPlatforms = {}
