@@ -6,6 +6,7 @@ local TweenService = game:GetService("TweenService")
 
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 local statsStore = DataStoreService:GetDataStore("FloorIsLava_PlayerStats_v1")
+local winsOrderedStore = DataStoreService:GetOrderedDataStore("FloorIsLava_GlobalWins_v1")
 
 local function getOrCreate(parent, className, name)
     local object = parent:FindFirstChild(name)
@@ -119,6 +120,87 @@ local function setupLighting()
     bloom.Parent = Lighting
 end
 
+local leaderboardLabels = {}
+
+local function buildLeaderboard(parent)
+    local board = makePart(parent, "GlobalLeaderboard", Vector3.new(38, 21, 1), Vector3.new(0, 10.5, 52), PALETTE.dark, Enum.Material.Metal)
+    board.CanCollide = false
+    addNeonTrim(parent, "LeaderboardTopGlow", Vector3.new(38, 0.35, 0.35), Vector3.new(0, 21.2, 51.35), PALETTE.gold)
+
+    local surface = Instance.new("SurfaceGui")
+    surface.Name = "GlobalWinsBoard"
+    surface.Face = Enum.NormalId.Front
+    surface.SizingMode = Enum.SurfaceGuiSizingMode.FixedSize
+    surface.CanvasSize = Vector2.new(900, 500)
+    surface.Parent = board
+
+    local title = Instance.new("TextLabel")
+    title.Name = "Title"
+    title.Size = UDim2.new(1, -40, 0, 76)
+    title.Position = UDim2.fromOffset(20, 12)
+    title.BackgroundTransparency = 1
+    title.Font = Enum.Font.GothamBlack
+    title.Text = "GLOBAL TOP 10  •  WINS"
+    title.TextColor3 = PALETTE.gold
+    title.TextScaled = true
+    title.Parent = surface
+
+    for index = 1, 10 do
+        local row = Instance.new("TextLabel")
+        row.Name = "Rank_" .. index
+        row.Size = UDim2.new(1, -56, 0, 34)
+        row.Position = UDim2.fromOffset(28, 92 + (index - 1) * 38)
+        row.BackgroundTransparency = 1
+        row.Font = Enum.Font.GothamBold
+        row.Text = string.format("%02d     ...", index)
+        row.TextColor3 = index == 1 and PALETTE.gold or PALETTE.cream
+        row.TextScaled = true
+        row.TextXAlignment = Enum.TextXAlignment.Left
+        row.Parent = surface
+        leaderboardLabels[index] = row
+    end
+end
+
+local function refreshLeaderboard()
+    local success, pages = pcall(function()
+        return winsOrderedStore:GetSortedAsync(false, 10)
+    end)
+    if not success then
+        warn("Could not refresh global wins leaderboard: " .. tostring(pages))
+        return
+    end
+
+    local page = pages:GetCurrentPage()
+    for index = 1, 10 do
+        local row = leaderboardLabels[index]
+        local entry = page[index]
+        if row then
+            if entry then
+                local userId = tonumber(string.match(entry.key, "^player_(%d+)$"))
+                local displayName = "Player"
+                if userId then
+                    local nameSuccess, name = pcall(function()
+                        return Players:GetNameFromUserIdAsync(userId)
+                    end)
+                    if nameSuccess then displayName = name end
+                end
+                row.Text = string.format("%02d     %s     •     %d", index, displayName, entry.value)
+            else
+                row.Text = string.format("%02d     —", index)
+            end
+        end
+    end
+end
+
+local function updateGlobalWins(player, winsValue)
+    task.spawn(function()
+        local success, err = pcall(function()
+            winsOrderedStore:SetAsync("player_" .. player.UserId, winsValue)
+        end)
+        if not success then warn("Could not update global wins for " .. player.Name .. ": " .. tostring(err)) end
+    end)
+end
+
 local function buildLobby()
     lobby:ClearAllChildren()
 
@@ -160,6 +242,7 @@ local function buildLobby()
 
     addSign(lobby, "RulesBoard", "STAY ABOVE THE LAVA", Vector3.new(-48, 8, -4), Vector3.new(1, 10, 24), PALETTE.gold, CFrame.Angles(0, math.rad(-90), 0), Enum.NormalId.Front)
     addSign(lobby, "RewardsBoard", "WIN  +50 COINS", Vector3.new(48, 8, -4), Vector3.new(1, 10, 24), PALETTE.green, CFrame.Angles(0, math.rad(90), 0), Enum.NormalId.Front)
+    buildLeaderboard(lobby)
 end
 
 local function teleportToLobby(player)
@@ -219,6 +302,7 @@ local function reward(player, amount, won)
     local wins = leaderstats:FindFirstChild("Wins")
     if coins then coins.Value += amount end
     if won and wins then wins.Value += 1 end
+    if won and wins then updateGlobalWins(player, wins.Value) end
 end
 
 local MAPS = {
@@ -496,6 +580,12 @@ end)
 
 setupLighting()
 buildLobby()
+task.spawn(function()
+    while true do
+        refreshLeaderboard()
+        task.wait(60)
+    end
+end)
 
 for _, player in ipairs(Players:GetPlayers()) do
     if not player:FindFirstChild("leaderstats") then loadStats(player) end
