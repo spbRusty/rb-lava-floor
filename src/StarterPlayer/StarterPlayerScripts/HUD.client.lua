@@ -259,6 +259,108 @@ local aliveLabel = create("TextLabel", {
     TextXAlignment = Enum.TextXAlignment.Left,
 }, aliveCard)
 
+-- Current arena badge
+local mapBadge = create("Frame", {
+    Name = "MapBadge",
+    AnchorPoint = Vector2.new(0.5, 0),
+    Position = UDim2.new(0.5, 0, 0, 142),
+    Size = UDim2.fromOffset(210, 30),
+    BackgroundColor3 = COLORS.panel,
+    BackgroundTransparency = 0.12,
+    BorderSizePixel = 0,
+}, gui)
+corner(mapBadge, 10)
+stroke(mapBadge, COLORS.cyan, 0.72, 1)
+local mapLabel = create("TextLabel", {
+    BackgroundTransparency = 1,
+    Size = UDim2.fromScale(1, 1),
+    Font = Enum.Font.GothamBold,
+    Text = "ARENA  •  WAITING",
+    TextColor3 = COLORS.cyan,
+    TextSize = 11,
+}, mapBadge)
+
+-- Round result card
+local resultCard = create("Frame", {
+    Name = "RoundResult",
+    AnchorPoint = Vector2.new(0.5, 0.5),
+    Position = UDim2.fromScale(0.5, 0.48),
+    Size = UDim2.fromOffset(470, 176),
+    BackgroundColor3 = COLORS.panel,
+    BackgroundTransparency = 0.04,
+    BorderSizePixel = 0,
+    Visible = false,
+    ZIndex = 10,
+}, gui)
+corner(resultCard, 22)
+stroke(resultCard, COLORS.gold, 0.25, 2)
+create("UIGradient", {
+    Color = ColorSequence.new(Color3.fromRGB(39, 48, 68), Color3.fromRGB(17, 22, 35)),
+    Rotation = 90,
+}, resultCard)
+local resultScale = create("UIScale", { Scale = 0.82 }, resultCard)
+local resultEyebrow = create("TextLabel", {
+    BackgroundTransparency = 1,
+    Position = UDim2.fromOffset(22, 18),
+    Size = UDim2.new(1, -44, 0, 20),
+    Font = Enum.Font.GothamBold,
+    Text = "ROUND COMPLETE",
+    TextColor3 = COLORS.orange,
+    TextSize = 12,
+    ZIndex = 11,
+}, resultCard)
+local resultTitle = create("TextLabel", {
+    BackgroundTransparency = 1,
+    Position = UDim2.fromOffset(22, 48),
+    Size = UDim2.new(1, -44, 0, 54),
+    Font = Enum.Font.GothamBlack,
+    Text = "VICTORY!",
+    TextColor3 = COLORS.gold,
+    TextSize = 34,
+    TextWrapped = true,
+    ZIndex = 11,
+}, resultCard)
+local resultSubtitle = create("TextLabel", {
+    BackgroundTransparency = 1,
+    Position = UDim2.fromOffset(22, 112),
+    Size = UDim2.new(1, -44, 0, 34),
+    Font = Enum.Font.GothamMedium,
+    Text = "You survived the rising lava.",
+    TextColor3 = COLORS.muted,
+    TextSize = 15,
+    TextWrapped = true,
+    ZIndex = 11,
+}, resultCard)
+
+local resultToken = 0
+local function showResult(won, message)
+    resultToken += 1
+    local token = resultToken
+    resultCard.Visible = true
+    resultEyebrow.Text = won and "LAST PLAYER STANDING" or "ROUND COMPLETE"
+    resultTitle.Text = won and "VICTORY!" or "SURVIVAL REPORT"
+    resultTitle.TextColor3 = won and COLORS.gold or COLORS.orange
+    resultSubtitle.Text = message
+    resultScale.Scale = 0.82
+    resultCard.BackgroundTransparency = 0.3
+    TweenService:Create(resultScale, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+        Scale = 1,
+    }):Play()
+    TweenService:Create(resultCard, TweenInfo.new(0.25), {
+        BackgroundTransparency = 0.04,
+    }):Play()
+    task.delay(4.2, function()
+        if token ~= resultToken then return end
+        local fade = TweenService:Create(resultCard, TweenInfo.new(0.25), {
+            BackgroundTransparency = 1,
+        })
+        fade:Play()
+        TweenService:Create(resultScale, TweenInfo.new(0.25), { Scale = 0.94 }):Play()
+        task.wait(0.28)
+        if token == resultToken then resultCard.Visible = false end
+    end)
+end
+
 -- Bottom toast
 local toast = create("Frame", {
     Name = "Toast",
@@ -315,12 +417,15 @@ roundState.OnClientEvent:Connect(function(state)
     subtitle.Text = message
     timerLabel.Text = timeLeft > 0 and string.format("%02d:%02d", math.floor(timeLeft / 60), timeLeft % 60) or "--:--"
     aliveLabel.Text = tostring(state.Alive or 0)
+    mapLabel.Text = "ARENA  •  " .. string.upper(state.Map or "UNKNOWN")
     timerPill.BackgroundColor3 = phase == "Round" and Color3.fromRGB(83, 39, 29) or Color3.fromRGB(43, 53, 73)
 
     if phase == "Winner" then
         showToast(message, COLORS.gold)
+        showResult(true, message)
     elseif phase == "Finished" then
         showToast(message, COLORS.orange)
+        showResult(false, message)
     elseif phase == "Round" and previousPhase ~= "Round" then
         showToast("The lava is rising. Keep moving!", COLORS.orange)
     elseif phase == "Intermission" and previousPhase ~= "Intermission" then
