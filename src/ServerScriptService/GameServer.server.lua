@@ -346,8 +346,8 @@ local function buildArena()
 
     local rng = Random.new()
     local laneCount = rng:NextInteger(3, 4)
-    local laneSpacing = rng:NextNumber(6.2, 6.9)
-    local platformWidth = rng:NextNumber(10.5, 12)
+    local laneSpacing = rng:NextNumber(9.2, 9.8)
+    local platformWidth = rng:NextNumber(8.4, 9.0)
     local verticalStep = rng:NextNumber(3.6, 4.0)
     local layerCount = rng:NextInteger(6, 7)
     local sectorNumber = rng:NextInteger(1000, 9999)
@@ -363,25 +363,25 @@ local function buildArena()
     local accentChoices = {PALETTE.orange, PALETTE.cyan, PALETTE.gold, PALETTE.green}
     local accent = accentChoices[rng:NextInteger(1, #accentChoices)]
 
-    makePart(arenaFolder, "ArenaFoundation", Vector3.new(118, 5, 118), center + Vector3.new(0, -20, 0), PALETTE.dark, Enum.Material.Basalt)
-    addNeonTrim(arenaFolder, "FoundationRing", Vector3.new(120, 0.5, 120), center + Vector3.new(0, -17.2, 0), accent)
+    makePart(arenaFolder, "ArenaFoundation", Vector3.new(180, 5, 180), center + Vector3.new(0, -20, 0), PALETTE.dark, Enum.Material.Basalt)
+    addNeonTrim(arenaFolder, "FoundationRing", Vector3.new(182, 0.5, 182), center + Vector3.new(0, -17.2, 0), accent)
 
-    local base = makePart(arenaFolder, "StartPlatform", Vector3.new(22, 3, 22), center + Vector3.new(0, 5, 0), PALETTE.slate, Enum.Material.Metal)
-    addNeonTrim(arenaFolder, "StartPlatformGlow", Vector3.new(22.2, 0.25, 0.3), base.Position + Vector3.new(0, 1.62, -10.8), accent)
+    local base = makePart(arenaFolder, "StartPlatform", Vector3.new(14, 3, 14), center + Vector3.new(0, 5, 0), PALETTE.slate, Enum.Material.Metal)
+    addNeonTrim(arenaFolder, "StartPlatformGlow", Vector3.new(14.2, 0.25, 0.3), base.Position + Vector3.new(0, 1.62, -6.8), accent)
     generatedPlatforms[1] = {Part = base, Layer = 0, Lane = 0, TopY = base.Position.Y + base.Size.Y / 2}
 
     -- Every platform in a layer has at least two reachable choices in the next layer.
     -- Adjacent lanes are close enough for a normal Roblox jump with a modest jump-power boost.
-    local previousDepth = 0
+    local previousDepth = 2.5
     for layer = 1, layerCount do
-        local depth = previousDepth + rng:NextNumber(-1.4, 1.4)
+        local depth = previousDepth + rng:NextNumber(9.2, 9.8)
         previousDepth = depth
         local y = 5 + layer * verticalStep
         local layerPlatforms = {}
 
         for lane = 1, laneCount do
-            local x = (lane - (laneCount + 1) / 2) * laneSpacing + rng:NextNumber(-0.45, 0.45)
-            local z = depth + rng:NextNumber(-0.5, 0.5)
+            local x = (lane - (laneCount + 1) / 2) * laneSpacing + rng:NextNumber(-0.2, 0.2)
+            local z = depth + rng:NextNumber(-0.2, 0.2)
             local sizeX = platformWidth + rng:NextNumber(-0.5, 0.5)
             local sizeZ = platformWidth + rng:NextNumber(-0.5, 0.5)
             local platform = makePart(
@@ -414,7 +414,7 @@ local function buildArena()
     -- Randomized perimeter structures make each generated sector look different without heavy assets.
     for index = 1, 8 do
         local angle = math.pi * 2 * index / 8 + rng:NextNumber(-0.12, 0.12)
-        local radius = rng:NextNumber(43, 52)
+        local radius = rng:NextNumber(70, 80)
         local height = rng:NextNumber(10, 24)
         local position = center + Vector3.new(math.cos(angle) * radius, height / 2 - 2, math.sin(angle) * radius)
         local tower = makePart(arenaFolder, "Tower_" .. index, Vector3.new(rng:NextNumber(4, 7), height, rng:NextNumber(4, 7)), position, PALETTE.slate, Enum.Material.Concrete)
@@ -467,7 +467,7 @@ local function buildArena()
 
     addSign(arenaFolder, "MapName", currentMapName, center + Vector3.new(0, 42, -55), Vector3.new(28, 4, 1), accent)
 
-    local lava = makePart(arenaFolder, "RisingLava", Vector3.new(130, 3, 130), center + Vector3.new(0, Config.LAVA_START_Y, 0), PALETTE.orange, Enum.Material.Neon)
+    local lava = makePart(arenaFolder, "RisingLava", Vector3.new(190, 3, 190), center + Vector3.new(0, Config.LAVA_START_Y, 0), PALETTE.orange, Enum.Material.Neon)
     lava.Transparency = 0.08
     lava.CanCollide = false
     lava.CanTouch = true
@@ -530,7 +530,7 @@ local function createBot(index, spawnPosition)
     end
 
     local root = makeBodyPart("HumanoidRootPart", Vector3.new(2, 2, 1), Color3.new(1, 1, 1), spawnPosition, 1)
-    root.CanCollide = true
+    root.CanCollide = false
     local bodyColor = index % 2 == 0 and Color3.fromRGB(62, 170, 220) or Color3.fromRGB(220, 112, 62)
     local torso = makeBodyPart("Torso", Vector3.new(2, 2, 1), bodyColor, spawnPosition)
     local head = makeBodyPart("Head", Vector3.new(2, 1, 1), Color3.fromRGB(238, 202, 158), spawnPosition + Vector3.new(0, 1.5, 0))
@@ -538,6 +538,8 @@ local function createBot(index, spawnPosition)
     local rightArm = makeBodyPart("Right Arm", Vector3.new(1, 2, 1), bodyColor, spawnPosition + Vector3.new(1.5, 0, 0))
     local leftLeg = makeBodyPart("Left Leg", Vector3.new(1, 2, 1), Color3.fromRGB(42, 48, 62), spawnPosition + Vector3.new(-0.5, -2, 0))
     local rightLeg = makeBodyPart("Right Leg", Vector3.new(1, 2, 1), Color3.fromRGB(42, 48, 62), spawnPosition + Vector3.new(0.5, -2, 0))
+    leftLeg.CanCollide = true
+    rightLeg.CanCollide = true
 
     local function connect(name, part0, part1, c0, c1)
         local joint = Instance.new("Motor6D")
@@ -581,40 +583,57 @@ local function runBotAI(bot)
             local root = bot.Model:FindFirstChild("HumanoidRootPart")
             if not root then break end
 
-            local currentLayer = 0
-            local bestBelow = math.huge
+            local currentRecord = nil
+            local bestScore = math.huge
             for _, record in ipairs(generatedPlatforms) do
                 local horizontal = (Vector3.new(root.Position.X, 0, root.Position.Z) - Vector3.new(record.Part.Position.X, 0, record.Part.Position.Z)).Magnitude
                 local vertical = root.Position.Y - record.TopY
-                if vertical >= -1 and vertical < 8 and horizontal < 10 and vertical < bestBelow then
-                    bestBelow = vertical
-                    currentLayer = record.Layer
+                if vertical >= -1 and vertical < 8 and horizontal < 18 then
+                    local score = math.abs(vertical - 3) + horizontal * 0.02
+                    if score < bestScore then
+                        bestScore = score
+                        currentRecord = record
+                    end
                 end
             end
 
             local options = {}
-            for _, record in ipairs(generatedPlatforms) do
-                if record.Layer == currentLayer + 1 then
-                    local horizontal = (Vector3.new(root.Position.X, 0, root.Position.Z) - Vector3.new(record.Part.Position.X, 0, record.Part.Position.Z)).Magnitude
-                    if horizontal <= 9.5 then table.insert(options, record) end
-                end
-            end
-
-            if #options == 0 then
+            if currentRecord then
                 for _, record in ipairs(generatedPlatforms) do
-                    local vertical = record.TopY - root.Position.Y
-                    local horizontal = (Vector3.new(root.Position.X, 0, root.Position.Z) - Vector3.new(record.Part.Position.X, 0, record.Part.Position.Z)).Magnitude
-                    if vertical > 0 and vertical <= 6.2 and horizontal <= 9.5 then
+                    local sameNextLayer = record.Layer == currentRecord.Layer + 1
+                    local connectedLane = currentRecord.Layer == 0 or math.abs(record.Lane - currentRecord.Lane) <= 1
+                    if sameNextLayer and connectedLane then
                         table.insert(options, record)
                     end
                 end
             end
 
             if #options > 0 then
-                local target = options[math.random(1, #options)]
-                humanoid.Jump = true
-                humanoid:MoveTo(target.Part.Position + Vector3.new(0, 4.25, 0))
-                task.wait(1.15)
+                table.sort(options, function(a, b)
+                    local aDistance = (Vector3.new(a.Part.Position.X, 0, a.Part.Position.Z) - Vector3.new(root.Position.X, 0, root.Position.Z)).Magnitude
+                    local bDistance = (Vector3.new(b.Part.Position.X, 0, b.Part.Position.Z) - Vector3.new(root.Position.X, 0, root.Position.Z)).Magnitude
+                    return aDistance < bDistance
+                end)
+
+                -- Move to the edge first, then jump across the small physical gap.
+                local target = options[math.random(1, math.min(2, #options))]
+                local direction = Vector3.new(
+                    target.Part.Position.X - currentRecord.Part.Position.X,
+                    0,
+                    target.Part.Position.Z - currentRecord.Part.Position.Z
+                ).Unit
+                local edgeScale = (currentRecord.Part.Size.X / 2 - 0.8) / math.max(math.abs(direction.X), math.abs(direction.Z), 0.01)
+                local targetScale = (target.Part.Size.X / 2 - 0.8) / math.max(math.abs(direction.X), math.abs(direction.Z), 0.01)
+                local launchPoint = currentRecord.Part.Position + direction * edgeScale
+                local landingPoint = target.Part.Position - direction * targetScale
+
+                humanoid:MoveTo(Vector3.new(launchPoint.X, currentRecord.Part.Position.Y + 4.25, launchPoint.Z))
+                task.wait(0.45)
+                if humanoid.Health > 0 and alive[bot] then
+                    humanoid.Jump = true
+                    humanoid:MoveTo(Vector3.new(landingPoint.X, target.Part.Position.Y + 4.25, landingPoint.Z))
+                end
+                task.wait(1.25)
             else
                 task.wait(0.3)
             end
