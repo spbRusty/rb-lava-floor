@@ -346,7 +346,7 @@ local function buildArena()
 
     local rng = Random.new()
     local laneCount = rng:NextInteger(3, 4)
-    local laneSpacing = rng:NextNumber(9.2, 9.8)
+    local laneSpacing = rng:NextNumber(9.8, 10.4)
     local platformWidth = rng:NextNumber(8.4, 9.0)
     local verticalStep = rng:NextNumber(3.6, 4.0)
     local layerCount = rng:NextInteger(6, 7)
@@ -380,7 +380,7 @@ local function buildArena()
         local layerPlatforms = {}
 
         for lane = 1, laneCount do
-            local x = (lane - (laneCount + 1) / 2) * laneSpacing + rng:NextNumber(-0.2, 0.2)
+            local x = (lane - (laneCount + 1) / 2) * laneSpacing + rng:NextNumber(-0.15, 0.15)
             local z = depth + rng:NextNumber(-0.2, 0.2)
             local sizeX = platformWidth + rng:NextNumber(-0.5, 0.5)
             local sizeZ = platformWidth + rng:NextNumber(-0.5, 0.5)
@@ -414,7 +414,7 @@ local function buildArena()
     -- Randomized perimeter structures make each generated sector look different without heavy assets.
     for index = 1, 8 do
         local angle = math.pi * 2 * index / 8 + rng:NextNumber(-0.12, 0.12)
-        local radius = rng:NextNumber(70, 80)
+        local radius = rng:NextNumber(82, 88)
         local height = rng:NextNumber(10, 24)
         local position = center + Vector3.new(math.cos(angle) * radius, height / 2 - 2, math.sin(angle) * radius)
         local tower = makePart(arenaFolder, "Tower_" .. index, Vector3.new(rng:NextNumber(4, 7), height, rng:NextNumber(4, 7)), position, PALETTE.slate, Enum.Material.Concrete)
