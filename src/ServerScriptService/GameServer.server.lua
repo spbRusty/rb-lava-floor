@@ -279,6 +279,48 @@ local function buildArena()
         addNeonTrim(arenaFolder, "TowerCap_" .. index, Vector3.new(7.3, 0.35, 7.3), tower.Position + Vector3.new(0, height / 2, 0), accent)
     end
 
+    -- Moving sweepers: simple geometry, but they force players to time their jumps.
+    for hazardIndex = 2, 3 do
+        local item = map.Platforms[hazardIndex]
+        local x, y, z, sx, sy, sz = table.unpack(item)
+        local beamLength = math.max(8, math.min(sx, sz) * 0.86)
+        local beamPosition = center + Vector3.new(x, y + sy / 2 + 1.25, z)
+        local beam = makePart(
+            arenaFolder,
+            "Sweeper_" .. hazardIndex,
+            Vector3.new(beamLength, 0.65, 2.1),
+            beamPosition,
+            PALETTE.red,
+            Enum.Material.Neon
+        )
+        beam.CanCollide = false
+        beam.CanTouch = true
+        beam.CastShadow = false
+
+        local beamLight = Instance.new("PointLight")
+        beamLight.Color = PALETTE.orange
+        beamLight.Range = 12
+        beamLight.Brightness = 0.7
+        beamLight.Parent = beam
+
+        beam.Touched:Connect(function(hit)
+            local character = hit:FindFirstAncestorOfClass("Model")
+            local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+            local player = character and Players:GetPlayerFromCharacter(character)
+            if humanoid and player and alive[player] then
+                humanoid.Health = 0
+            end
+        end)
+
+        local startCFrame = beam.CFrame
+        local spin = TweenService:Create(
+            beam,
+            TweenInfo.new(4.5 + hazardIndex * 0.7, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, -1),
+            { CFrame = startCFrame * CFrame.Angles(0, math.rad(360), 0) }
+        )
+        spin:Play()
+    end
+
     addSign(arenaFolder, "MapName", map.Name:upper(), center + Vector3.new(0, 38, -73), Vector3.new(32, 5, 1), accent)
 
     local lava = makePart(arenaFolder, "RisingLava", Vector3.new(170, 3, 170), center + Vector3.new(0, Config.LAVA_START_Y, 0), PALETTE.orange, Enum.Material.Neon)
