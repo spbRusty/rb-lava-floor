@@ -11,7 +11,7 @@ A round-based Roblox survival game. Climb a shifting obstacle arena, dodge movin
 - A procedural arena generator creates a fresh sector each round, with randomized lane count, platform positions, heights, sizes, colors and hazard placement.
 - Every platform layer has at least two reachable upward choices; platform spacing and height steps are constrained for standard Roblox jumping.
 - Moving neon sweepers on elevated platforms.
-- Lava and sweeper contact eliminate players.
+- Lava and sweeper contact eliminate players and NPC rivals.
 - Coins for participation and a larger reward for the winner.
 - Wins and coins saved with DataStore.
 - Global top-10 wins leaderboard displayed in the lobby and refreshed every 60 seconds.
@@ -20,7 +20,7 @@ A round-based Roblox survival game. Climb a shifting obstacle arena, dodge movin
 ### Visual direction
 - Stylized volcanic / industrial world built from standard Roblox Parts.
 - Lobby with a central stage, neon trims, signs and colored lighting.
-- Three platform layouts with different silhouettes and accent colors.
+- Procedural platform layouts with randomized silhouettes, spacing and accent colors.
 - Arena foundations, towers, glowing platform edges and moving hazards.
 - Neon lava with PointLight and particle sparks.
 - Atmosphere, color grading and bloom.
@@ -42,7 +42,7 @@ This repository uses [Rojo](https://rojo.space/) to sync Luau files into Roblox 
 3. Run `rojo serve` from the repository directory.
 4. Connect the Rojo plugin in Roblox Studio.
 5. Publish the experience and enable **Game Settings → Security → Enable Studio Access to API Services** to test DataStores.
-6. Use **Test → Start** with at least two players to test multiplayer rounds.
+6. Use **Test → Start** with one player to test the solo NPC rivals, or start a two-client server test for multiplayer.
 
 The game starts with one real player and adds two NPC rivals in solo sessions. When two or more real players are present, NPC rivals are not spawned.
 
