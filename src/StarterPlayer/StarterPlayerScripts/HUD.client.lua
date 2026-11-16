@@ -6,6 +6,7 @@ local RunService = game:GetService("RunService")
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 local roundState = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("RoundState")
+local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 
 local COLORS = {
     panel = Color3.fromRGB(38, 64, 108),
@@ -187,22 +188,28 @@ end
 local coinsValue = makeStat("Coins", 0, "COINS", "0", COLORS.gold)
 local winsValue = makeStat("Wins", 50, "WINS", "0", COLORS.cyan)
 
+local statsConnections = {}
 local function bindStats()
+    for _, connection in ipairs(statsConnections) do
+        connection:Disconnect()
+    end
+    table.clear(statsConnections)
+
     local leaderstats = player:FindFirstChild("leaderstats")
     if not leaderstats then return end
     local coins = leaderstats:FindFirstChild("Coins")
     local wins = leaderstats:FindFirstChild("Wins")
     if coins then
         coinsValue.Text = tostring(coins.Value)
-        coins:GetPropertyChangedSignal("Value"):Connect(function()
+        table.insert(statsConnections, coins:GetPropertyChangedSignal("Value"):Connect(function()
             coinsValue.Text = tostring(coins.Value)
-        end)
+        end))
     end
     if wins then
         winsValue.Text = tostring(wins.Value)
-        wins:GetPropertyChangedSignal("Value"):Connect(function()
+        table.insert(statsConnections, wins:GetPropertyChangedSignal("Value"):Connect(function()
             winsValue.Text = tostring(wins.Value)
-        end)
+        end))
     end
 end
 player.ChildAdded:Connect(function(child)
@@ -244,6 +251,13 @@ local function updateMobileLayout()
     end
 end
 updateMobileLayout()
+workspace:GetPropertyChangedSignal("CurrentCamera"):Connect(function()
+    local camera = workspace.CurrentCamera
+    if camera then
+        camera:GetPropertyChangedSignal("ViewportSize"):Connect(updateMobileLayout)
+        updateMobileLayout()
+    end
+end)
 if workspace.CurrentCamera then
     workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(updateMobileLayout)
 end
@@ -379,15 +393,23 @@ local vipButton = create("TextButton", {
 }, gui)
 corner(vipButton, 14)
 stroke(vipButton, COLORS.gold, 0.2, 1.5)
+local function updateVipButton()
+    vipButton.Visible = Config.VIP_GAME_PASS_ID > 0 and player:GetAttribute("HasVIP") ~= true
+end
+player:GetAttributeChangedSignal("HasVIP"):Connect(updateVipButton)
+updateVipButton()
+
 vipButton.Activated:Connect(function()
-    MarketplaceService:PromptGamePassPurchase(player, 2087837274)
+    if Config.VIP_GAME_PASS_ID > 0 and player:GetAttribute("HasVIP") ~= true then
+        MarketplaceService:PromptGamePassPurchase(player, Config.VIP_GAME_PASS_ID)
+    end
 end)
 
 -- Bottom toast
 local toast = create("Frame", {
     Name = "Toast",
     AnchorPoint = Vector2.new(0.5, 1),
-    Position = UDim2.new(0.5, 0, 1, -34),
+    Position = UDim2.new(0.5, 0, 1, -84),
     Size = UDim2.fromOffset(360, 54),
     BackgroundColor3 = COLORS.panel,
     BackgroundTransparency = 1,
