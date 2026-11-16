@@ -515,49 +515,53 @@ local function createBot(index, spawnPosition)
     local model = Instance.new("Model")
     model.Name = "LavaBot_" .. index
 
-    local root = Instance.new("Part")
-    root.Name = "HumanoidRootPart"
-    root.Size = Vector3.new(2, 2, 1)
-    root.Transparency = 1
+    local function makeBodyPart(name, size, color, position, transparency)
+        local part = Instance.new("Part")
+        part.Name = name
+        part.Size = size
+        part.Color = color
+        part.Material = Enum.Material.SmoothPlastic
+        part.Position = position
+        part.Transparency = transparency or 0
+        part.Anchored = false
+        part.CanCollide = false
+        part.Parent = model
+        return part
+    end
+
+    local root = makeBodyPart("HumanoidRootPart", Vector3.new(2, 2, 1), Color3.new(1, 1, 1), spawnPosition, 1)
     root.CanCollide = true
-    root.Anchored = false
-    root.Position = spawnPosition
-    root.Parent = model
+    local bodyColor = index % 2 == 0 and Color3.fromRGB(62, 170, 220) or Color3.fromRGB(220, 112, 62)
+    local torso = makeBodyPart("Torso", Vector3.new(2, 2, 1), bodyColor, spawnPosition)
+    local head = makeBodyPart("Head", Vector3.new(2, 1, 1), Color3.fromRGB(238, 202, 158), spawnPosition + Vector3.new(0, 1.5, 0))
+    local leftArm = makeBodyPart("Left Arm", Vector3.new(1, 2, 1), bodyColor, spawnPosition + Vector3.new(-1.5, 0, 0))
+    local rightArm = makeBodyPart("Right Arm", Vector3.new(1, 2, 1), bodyColor, spawnPosition + Vector3.new(1.5, 0, 0))
+    local leftLeg = makeBodyPart("Left Leg", Vector3.new(1, 2, 1), Color3.fromRGB(42, 48, 62), spawnPosition + Vector3.new(-0.5, -2, 0))
+    local rightLeg = makeBodyPart("Right Leg", Vector3.new(1, 2, 1), Color3.fromRGB(42, 48, 62), spawnPosition + Vector3.new(0.5, -2, 0))
 
-    local torso = Instance.new("Part")
-    torso.Name = "Torso"
-    torso.Size = Vector3.new(2, 2, 1)
-    torso.Color = index % 2 == 0 and Color3.fromRGB(62, 170, 220) or Color3.fromRGB(220, 112, 62)
-    torso.Material = Enum.Material.SmoothPlastic
-    torso.CanCollide = false
-    torso.Position = spawnPosition
-    torso.Parent = model
+    local function connect(name, part0, part1, c0, c1)
+        local joint = Instance.new("Motor6D")
+        joint.Name = name
+        joint.Part0 = part0
+        joint.Part1 = part1
+        joint.C0 = c0
+        joint.C1 = c1
+        joint.Parent = part0
+    end
 
-    local head = Instance.new("Part")
-    head.Name = "Head"
-    head.Shape = Enum.PartType.Ball
-    head.Size = Vector3.new(1.25, 1.25, 1.25)
-    head.Color = Color3.fromRGB(238, 202, 158)
-    head.Material = Enum.Material.SmoothPlastic
-    head.CanCollide = false
-    head.Position = spawnPosition + Vector3.new(0, 1.55, 0)
-    head.Parent = model
-
-    local rootWeld = Instance.new("WeldConstraint")
-    rootWeld.Part0 = root
-    rootWeld.Part1 = torso
-    rootWeld.Parent = root
-    local headWeld = Instance.new("WeldConstraint")
-    headWeld.Part0 = torso
-    headWeld.Part1 = head
-    headWeld.Parent = torso
+    connect("RootJoint", root, torso, CFrame.new(), CFrame.new())
+    connect("Neck", torso, head, CFrame.new(0, 1, 0), CFrame.new(0, -0.5, 0))
+    connect("Left Shoulder", torso, leftArm, CFrame.new(-1, 0.5, 0), CFrame.new(0, 0.5, 0))
+    connect("Right Shoulder", torso, rightArm, CFrame.new(1, 0.5, 0), CFrame.new(0, 0.5, 0))
+    connect("Left Hip", torso, leftLeg, CFrame.new(-0.5, -1, 0), CFrame.new(0, 1, 0))
+    connect("Right Hip", torso, rightLeg, CFrame.new(0.5, -1, 0), CFrame.new(0, 1, 0))
 
     local humanoid = Instance.new("Humanoid")
     humanoid.DisplayName = "BOT " .. index
     humanoid.NameDisplayDistance = 45
     humanoid.WalkSpeed = 14 + (index % 2)
     humanoid.UseJumpPower = true
-    humanoid.JumpPower = 55
+    humanoid.JumpPower = Config.PLAYER_JUMP_POWER
     humanoid.MaxHealth = 100
     humanoid.Health = 100
     humanoid.Parent = model
@@ -609,7 +613,7 @@ local function runBotAI(bot)
             if #options > 0 then
                 local target = options[math.random(1, #options)]
                 humanoid.Jump = true
-                humanoid:MoveTo(target.Part.Position + Vector3.new(0, 2.25, 0))
+                humanoid:MoveTo(target.Part.Position + Vector3.new(0, 4.25, 0))
                 task.wait(1.15)
             else
                 task.wait(0.3)
@@ -690,7 +694,7 @@ local function runRound()
     if #roster == 1 then
         for index = 1, Config.SOLO_BOT_COUNT do
             local angle = math.pi * 2 * index / (Config.SOLO_BOT_COUNT + 1)
-            local spawnPosition = Config.ARENA_CENTER + Vector3.new(math.cos(angle) * 6, 9, math.sin(angle) * 6)
+            local spawnPosition = Config.ARENA_CENTER + Vector3.new(math.cos(angle) * 6, 9.5, math.sin(angle) * 6)
             local bot = createBot(index, spawnPosition)
             alive[bot] = true
             table.insert(contestants, bot)
