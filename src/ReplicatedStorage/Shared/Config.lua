@@ -1,7 +1,9 @@
 local Config = {}
 
 -- Match flow
-Config.MIN_PLAYERS = 2
+Config.MIN_PLAYERS = 1
+Config.SOLO_BOT_COUNT = 2
+Config.PLAYER_JUMP_POWER = 55
 Config.INTERMISSION_SECONDS = 15
 Config.ROUND_SECONDS = 100
 Config.POST_ROUND_SECONDS = 6
