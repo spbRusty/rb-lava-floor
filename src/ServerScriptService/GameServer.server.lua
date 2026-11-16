@@ -339,6 +339,7 @@ local function refreshVip(player)
         return
     end
     vipOwners[player] = owns
+    player:SetAttribute("HasVIP", owns)
     if owns and player.Character then
         applyVipCosmetics(player, player.Character)
     end
