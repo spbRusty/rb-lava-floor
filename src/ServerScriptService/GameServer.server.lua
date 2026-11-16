@@ -44,7 +44,11 @@ local arenaFolder = getOrCreate(world, "Folder", "Arena")
 local alive = {}
 local participants = {}
 local roundActive = false
-local currentMapName = "Volcano Heights"
+local currentMapName = "GENERATED SECTOR"
+local botFolder = getOrCreate(world, "Folder", "Bots")
+local botByModel = {}
+local generatedPlatforms = {}
+local lastLayoutSignature = nil
 
 local PALETTE = {
     dark = Color3.fromRGB(24, 31, 45),
@@ -180,6 +184,7 @@ local function buildLeaderboard(parent)
 end
 
 local function refreshLeaderboard()
+    if not winsOrderedStore then return end
     local success, pages = pcall(function()
         return winsOrderedStore:GetSortedAsync(false, 10)
     end)
@@ -211,6 +216,7 @@ local function refreshLeaderboard()
 end
 
 local function updateGlobalWins(player, winsValue)
+    if not winsOrderedStore then return end
     task.spawn(function()
         local success, err = pcall(function()
             winsOrderedStore:SetAsync("player_" .. player.UserId, winsValue)
@@ -285,19 +291,23 @@ local function loadStats(player)
     wins.Value = 0
     wins.Parent = leaderstats
 
-    local success, data = pcall(function()
-        return statsStore:GetAsync("player_" .. player.UserId)
-    end)
+    local success, data = false, nil
+    if statsStore then
+        success, data = pcall(function()
+            return statsStore:GetAsync("player_" .. player.UserId)
+        end)
+    end
     if success and type(data) == "table" then
         coins.Value = math.max(0, tonumber(data.Coins) or 0)
         wins.Value = math.max(0, tonumber(data.Wins) or 0)
-    elseif not success then
+    elseif statsStore and not success then
         warn("Could not load FloorIsLava stats for " .. player.Name)
     end
-    if success then updateGlobalWins(player, wins.Value) end
+    if success and winsOrderedStore then updateGlobalWins(player, wins.Value) end
 end
 
 local function saveStats(player)
+    if not statsStore then return end
     local leaderstats = player:FindFirstChild("leaderstats")
     if not leaderstats then return end
     local coins = leaderstats:FindFirstChild("Coins")
@@ -324,109 +334,136 @@ local function reward(player, amount, won)
     if won and wins then updateGlobalWins(player, wins.Value) end
 end
 
-local MAPS = {
-    {
-        Name = "Volcano Heights",
-        Accent = PALETTE.orange,
-        Platforms = {
-            {0, 5, 0, 24, 3, 24}, {-25, 8, -18, 16, 3, 16}, {25, 10, -18, 16, 3, 16},
-            {-25, 13, 20, 14, 3, 14}, {25, 15, 20, 14, 3, 14}, {0, 19, -38, 18, 3, 18},
-            {0, 22, 38, 18, 3, 18}, {-42, 18, 0, 12, 3, 12}, {42, 21, 0, 12, 3, 12},
-            {-12, 27, -58, 12, 3, 12}, {16, 31, 58, 12, 3, 12},
-        },
-    },
-    {
-        Name = "Neon Foundry",
-        Accent = PALETTE.cyan,
-        Platforms = {
-            {0, 5, 0, 28, 3, 18}, {-30, 9, 0, 16, 3, 16}, {30, 9, 0, 16, 3, 16},
-            {-20, 14, -27, 18, 3, 12}, {20, 17, 27, 18, 3, 12}, {0, 21, -48, 14, 3, 14},
-            {0, 24, 48, 14, 3, 14}, {-48, 19, -25, 12, 3, 12}, {48, 22, 25, 12, 3, 12},
-            {-4, 29, 0, 12, 3, 12}, {0, 33, 65, 12, 3, 12},
-        },
-    },
-    {
-        Name = "Skyline Ruins",
-        Accent = PALETTE.gold,
-        Platforms = {
-            {0, 5, 0, 20, 3, 20}, {-24, 8, -24, 14, 3, 14}, {24, 11, -24, 14, 3, 14},
-            {-42, 14, 0, 12, 3, 12}, {42, 16, 0, 12, 3, 12}, {-24, 19, 24, 14, 3, 14},
-            {24, 22, 24, 14, 3, 14}, {0, 26, -48, 16, 3, 16}, {0, 30, 48, 16, 3, 16},
-            {-48, 25, 42, 10, 3, 10}, {48, 29, -42, 10, 3, 10},
-        },
-    },
-}
-
 local function buildArena()
     arenaFolder:ClearAllChildren()
-    local map = MAPS[math.random(1, #MAPS)]
-    currentMapName = map.Name
+    botFolder:ClearAllChildren()
+    botByModel = {}
+    generatedPlatforms = {}
+
+    local rng = Random.new()
+    local laneCount = rng:NextInteger(3, 4)
+    local laneSpacing = rng:NextNumber(6.2, 6.9)
+    local platformWidth = rng:NextNumber(10.5, 12)
+    local verticalStep = rng:NextNumber(3.6, 4.0)
+    local layerCount = rng:NextInteger(6, 7)
+    local sectorNumber = rng:NextInteger(1000, 9999)
+    local signature = table.concat({laneCount, math.floor(laneSpacing * 10), math.floor(platformWidth * 10), math.floor(verticalStep * 10), layerCount, sectorNumber}, "-")
+    while signature == lastLayoutSignature do
+        sectorNumber = rng:NextInteger(1000, 9999)
+        signature = signature .. "-" .. tostring(sectorNumber)
+    end
+    lastLayoutSignature = signature
+    currentMapName = string.format("SECTOR %04d", sectorNumber)
+
     local center = Config.ARENA_CENTER
-    local accent = map.Accent
+    local accentChoices = {PALETTE.orange, PALETTE.cyan, PALETTE.gold, PALETTE.green}
+    local accent = accentChoices[rng:NextInteger(1, #accentChoices)]
 
-    makePart(arenaFolder, "ArenaFoundation", Vector3.new(154, 5, 154), center + Vector3.new(0, -20, 0), PALETTE.dark, Enum.Material.Basalt)
-    addNeonTrim(arenaFolder, "FoundationRing", Vector3.new(156, 0.5, 156), center + Vector3.new(0, -17.2, 0), accent)
+    makePart(arenaFolder, "ArenaFoundation", Vector3.new(118, 5, 118), center + Vector3.new(0, -20, 0), PALETTE.dark, Enum.Material.Basalt)
+    addNeonTrim(arenaFolder, "FoundationRing", Vector3.new(120, 0.5, 120), center + Vector3.new(0, -17.2, 0), accent)
 
-    for index, item in ipairs(map.Platforms) do
-        local x, y, z, sx, sy, sz = table.unpack(item)
-        local platform = makePart(arenaFolder, "Platform_" .. index, Vector3.new(sx, sy, sz), center + Vector3.new(x, y, z), index % 2 == 0 and PALETTE.steel or PALETTE.slate, Enum.Material.Metal)
-        platform.TopSurface = Enum.SurfaceType.Smooth
-        addNeonTrim(arenaFolder, "PlatformEdge_" .. index, Vector3.new(sx + 0.25, 0.22, 0.28), center + Vector3.new(x, y - sy / 2 + 0.08, z - sz / 2), accent)
+    local base = makePart(arenaFolder, "StartPlatform", Vector3.new(22, 3, 22), center + Vector3.new(0, 5, 0), PALETTE.slate, Enum.Material.Metal)
+    addNeonTrim(arenaFolder, "StartPlatformGlow", Vector3.new(22.2, 0.25, 0.3), base.Position + Vector3.new(0, 1.62, -10.8), accent)
+    generatedPlatforms[1] = {Part = base, Layer = 0, Lane = 0, TopY = base.Position.Y + base.Size.Y / 2}
+
+    -- Every platform in a layer has at least two reachable choices in the next layer.
+    -- Adjacent lanes are close enough for a normal Roblox jump with a modest jump-power boost.
+    local previousDepth = 0
+    for layer = 1, layerCount do
+        local depth = previousDepth + rng:NextNumber(-1.4, 1.4)
+        previousDepth = depth
+        local y = 5 + layer * verticalStep
+        local layerPlatforms = {}
+
+        for lane = 1, laneCount do
+            local x = (lane - (laneCount + 1) / 2) * laneSpacing + rng:NextNumber(-0.45, 0.45)
+            local z = depth + rng:NextNumber(-0.5, 0.5)
+            local sizeX = platformWidth + rng:NextNumber(-0.5, 0.5)
+            local sizeZ = platformWidth + rng:NextNumber(-0.5, 0.5)
+            local platform = makePart(
+                arenaFolder,
+                string.format("Platform_L%d_%d", layer, lane),
+                Vector3.new(sizeX, 2.5, sizeZ),
+                center + Vector3.new(x, y, z),
+                (layer + lane) % 2 == 0 and PALETTE.steel or PALETTE.slate,
+                Enum.Material.Metal
+            )
+            platform.TopSurface = Enum.SurfaceType.Smooth
+            addNeonTrim(arenaFolder, "PlatformEdgeA_L" .. layer .. "_" .. lane,
+                Vector3.new(sizeX + 0.2, 0.2, 0.22),
+                platform.Position + Vector3.new(0, -1.12, -sizeZ / 2), accent)
+            addNeonTrim(arenaFolder, "PlatformEdgeB_L" .. layer .. "_" .. lane,
+                Vector3.new(0.22, 0.2, sizeZ + 0.2),
+                platform.Position + Vector3.new(-sizeX / 2, -1.12, 0), accent)
+
+            local record = {
+                Part = platform,
+                Layer = layer,
+                Lane = lane,
+                TopY = platform.Position.Y + platform.Size.Y / 2,
+            }
+            generatedPlatforms[#generatedPlatforms + 1] = record
+            layerPlatforms[#layerPlatforms + 1] = record
+        end
     end
 
-    for index = 1, 10 do
-        local angle = math.pi * 2 * index / 10
-        local offset = Vector3.new(math.cos(angle) * 63, 1 + (index % 3) * 3, math.sin(angle) * 63)
-        local height = 12 + (index % 3) * 5
-        local tower = makePart(arenaFolder, "Tower_" .. index, Vector3.new(7, height, 7), center + offset, PALETTE.slate, Enum.Material.Concrete)
-        addNeonTrim(arenaFolder, "TowerCap_" .. index, Vector3.new(7.3, 0.35, 7.3), tower.Position + Vector3.new(0, height / 2, 0), accent)
+    -- Randomized perimeter structures make each generated sector look different without heavy assets.
+    for index = 1, 8 do
+        local angle = math.pi * 2 * index / 8 + rng:NextNumber(-0.12, 0.12)
+        local radius = rng:NextNumber(43, 52)
+        local height = rng:NextNumber(10, 24)
+        local position = center + Vector3.new(math.cos(angle) * radius, height / 2 - 2, math.sin(angle) * radius)
+        local tower = makePart(arenaFolder, "Tower_" .. index, Vector3.new(rng:NextNumber(4, 7), height, rng:NextNumber(4, 7)), position, PALETTE.slate, Enum.Material.Concrete)
+        addNeonTrim(arenaFolder, "TowerCap_" .. index, Vector3.new(tower.Size.X + 0.3, 0.3, tower.Size.Z + 0.3), tower.Position + Vector3.new(0, height / 2, 0), accent)
     end
 
-    -- Moving sweepers: simple geometry, but they force players to time their jumps.
-    for hazardIndex = 2, 3 do
-        local item = map.Platforms[hazardIndex]
-        local x, y, z, sx, sy, sz = table.unpack(item)
-        local beamLength = math.max(8, math.min(sx, sz) * 0.86)
-        local beamPosition = center + Vector3.new(x, y + sy / 2 + 1.25, z)
-        local beam = makePart(
-            arenaFolder,
-            "Sweeper_" .. hazardIndex,
-            Vector3.new(beamLength, 0.65, 2.1),
-            beamPosition,
-            PALETTE.red,
-            Enum.Material.Neon
-        )
-        beam.CanCollide = false
-        beam.CanTouch = true
-        beam.CastShadow = false
+    -- Two rotating hazards are placed on different middle layers.
+    local hazardLayers = {math.max(2, math.floor(layerCount * 0.35)), math.max(3, math.floor(layerCount * 0.7))}
+    for hazardIndex, hazardLayer in ipairs(hazardLayers) do
+        local candidates = {}
+        for _, record in ipairs(generatedPlatforms) do
+            if record.Layer == hazardLayer then table.insert(candidates, record) end
+        end
+        if #candidates > 0 then
+            local record = candidates[rng:NextInteger(1, #candidates)]
+            local platform = record.Part
+            local beam = makePart(
+                arenaFolder,
+                "Sweeper_" .. hazardIndex,
+                Vector3.new(platform.Size.X * 0.82, 0.55, 1.8),
+                platform.Position + Vector3.new(0, platform.Size.Y / 2 + 1.15, 0),
+                PALETTE.red,
+                Enum.Material.Neon
+            )
+            beam.CanCollide = false
+            beam.CastShadow = false
+            local beamLight = Instance.new("PointLight")
+            beamLight.Color = PALETTE.orange
+            beamLight.Range = 10
+            beamLight.Brightness = 0.65
+            beamLight.Parent = beam
 
-        local beamLight = Instance.new("PointLight")
-        beamLight.Color = PALETTE.orange
-        beamLight.Range = 12
-        beamLight.Brightness = 0.7
-        beamLight.Parent = beam
+            beam.Touched:Connect(function(hit)
+                local character = hit:FindFirstAncestorOfClass("Model")
+                local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+                local player = character and Players:GetPlayerFromCharacter(character)
+                local bot = character and botByModel[character]
+                local contestant = player or bot
+                if humanoid and contestant and alive[contestant] then humanoid.Health = 0 end
+            end)
 
-        beam.Touched:Connect(function(hit)
-            local character = hit:FindFirstAncestorOfClass("Model")
-            local humanoid = character and character:FindFirstChildOfClass("Humanoid")
-            local player = character and Players:GetPlayerFromCharacter(character)
-            if humanoid and player and alive[player] then
-                humanoid.Health = 0
-            end
-        end)
-
-        local startCFrame = beam.CFrame
-        local spin = TweenService:Create(
-            beam,
-            TweenInfo.new(4.5 + hazardIndex * 0.7, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, -1),
-            { CFrame = startCFrame * CFrame.Angles(0, math.rad(359), 0) }
-        )
-        spin:Play()
+            local spin = TweenService:Create(
+                beam,
+                TweenInfo.new(rng:NextNumber(5.2, 7.4), Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, -1),
+                {CFrame = beam.CFrame * CFrame.Angles(0, math.rad(359), 0)}
+            )
+            spin:Play()
+        end
     end
 
-    addSign(arenaFolder, "MapName", map.Name:upper(), center + Vector3.new(0, 38, -73), Vector3.new(32, 5, 1), accent)
+    addSign(arenaFolder, "MapName", currentMapName, center + Vector3.new(0, 42, -55), Vector3.new(28, 4, 1), accent)
 
-    local lava = makePart(arenaFolder, "RisingLava", Vector3.new(170, 3, 170), center + Vector3.new(0, Config.LAVA_START_Y, 0), PALETTE.orange, Enum.Material.Neon)
+    local lava = makePart(arenaFolder, "RisingLava", Vector3.new(130, 3, 130), center + Vector3.new(0, Config.LAVA_START_Y, 0), PALETTE.orange, Enum.Material.Neon)
     lava.Transparency = 0.08
     lava.CanCollide = false
     lava.CanTouch = true
@@ -458,25 +495,138 @@ local function buildArena()
         local character = hit:FindFirstAncestorOfClass("Model")
         local humanoid = character and character:FindFirstChildOfClass("Humanoid")
         local player = character and Players:GetPlayerFromCharacter(character)
-        if humanoid and player and alive[player] and not touched[player] then
-            touched[player] = true
+        local bot = character and botByModel[character]
+        local contestant = player or bot
+        if humanoid and contestant and alive[contestant] and not touched[contestant] then
+            touched[contestant] = true
             humanoid.Health = 0
-            task.delay(1, function() touched[player] = nil end)
+            task.delay(1, function() touched[contestant] = nil end)
         end
     end)
 
     return lava
 end
 
+local function createBot(index, spawnPosition)
+    local model = Instance.new("Model")
+    model.Name = "LavaBot_" .. index
+
+    local root = Instance.new("Part")
+    root.Name = "HumanoidRootPart"
+    root.Size = Vector3.new(2, 2, 1)
+    root.Transparency = 1
+    root.CanCollide = false
+    root.Anchored = false
+    root.Position = spawnPosition
+    root.Parent = model
+
+    local torso = Instance.new("Part")
+    torso.Name = "Torso"
+    torso.Size = Vector3.new(2, 2, 1)
+    torso.Color = index % 2 == 0 and Color3.fromRGB(62, 170, 220) or Color3.fromRGB(220, 112, 62)
+    torso.Material = Enum.Material.SmoothPlastic
+    torso.Position = spawnPosition
+    torso.Parent = model
+
+    local head = Instance.new("Part")
+    head.Name = "Head"
+    head.Shape = Enum.PartType.Ball
+    head.Size = Vector3.new(1.25, 1.25, 1.25)
+    head.Color = Color3.fromRGB(238, 202, 158)
+    head.Material = Enum.Material.SmoothPlastic
+    head.Position = spawnPosition + Vector3.new(0, 1.55, 0)
+    head.Parent = model
+
+    local rootWeld = Instance.new("WeldConstraint")
+    rootWeld.Part0 = root
+    rootWeld.Part1 = torso
+    rootWeld.Parent = root
+    local headWeld = Instance.new("WeldConstraint")
+    headWeld.Part0 = torso
+    headWeld.Part1 = head
+    headWeld.Parent = torso
+
+    local humanoid = Instance.new("Humanoid")
+    humanoid.DisplayName = "BOT " .. index
+    humanoid.NameDisplayDistance = 45
+    humanoid.WalkSpeed = 14 + (index % 2)
+    humanoid.UseJumpPower = true
+    humanoid.JumpPower = 55
+    humanoid.MaxHealth = 100
+    humanoid.Health = 100
+    humanoid.Parent = model
+
+    model.PrimaryPart = root
+    model.Parent = botFolder
+    model:PivotTo(CFrame.new(spawnPosition))
+    local record = {IsBot = true, Model = model, Humanoid = humanoid, Name = "BOT " .. index}
+    botByModel[model] = record
+    return record
+end
+
+local function runBotAI(bot)
+    task.spawn(function()
+        local humanoid = bot.Humanoid
+        while roundActive and alive[bot] and bot.Model.Parent and humanoid.Health > 0 do
+            local root = bot.Model:FindFirstChild("HumanoidRootPart")
+            if not root then break end
+
+            local currentLayer = 0
+            local bestBelow = math.huge
+            for _, record in ipairs(generatedPlatforms) do
+                local horizontal = (Vector3.new(root.Position.X, 0, root.Position.Z) - Vector3.new(record.Part.Position.X, 0, record.Part.Position.Z)).Magnitude
+                local vertical = root.Position.Y - record.TopY
+                if vertical >= -1 and vertical < 8 and horizontal < 10 and vertical < bestBelow then
+                    bestBelow = vertical
+                    currentLayer = record.Layer
+                end
+            end
+
+            local options = {}
+            for _, record in ipairs(generatedPlatforms) do
+                if record.Layer == currentLayer + 1 then
+                    local horizontal = (Vector3.new(root.Position.X, 0, root.Position.Z) - Vector3.new(record.Part.Position.X, 0, record.Part.Position.Z)).Magnitude
+                    if horizontal <= 9.5 then table.insert(options, record) end
+                end
+            end
+
+            if #options == 0 then
+                for _, record in ipairs(generatedPlatforms) do
+                    local vertical = record.TopY - root.Position.Y
+                    local horizontal = (Vector3.new(root.Position.X, 0, root.Position.Z) - Vector3.new(record.Part.Position.X, 0, record.Part.Position.Z)).Magnitude
+                    if vertical > 0 and vertical <= 6.2 and horizontal <= 9.5 then
+                        table.insert(options, record)
+                    end
+                end
+            end
+
+            if #options > 0 then
+                local target = options[math.random(1, #options)]
+                humanoid.Jump = true
+                humanoid:MoveTo(target.Part.Position + Vector3.new(0, 3.5, 0))
+                task.wait(1.15)
+            else
+                task.wait(0.3)
+            end
+        end
+    end)
+end
+
 local function countAlive()
-    local count, lastPlayer = 0, nil
-    for player, isAlive in pairs(alive) do
-        if isAlive and player.Parent == Players then
+    local count, lastContestant = 0, nil
+    for contestant, isAlive in pairs(alive) do
+        local present = false
+        if type(contestant) == "table" and contestant.IsBot then
+            present = contestant.Model and contestant.Model.Parent ~= nil
+        else
+            present = contestant.Parent == Players
+        end
+        if isAlive and present then
             count += 1
-            lastPlayer = player
+            lastContestant = contestant
         end
     end
-    return count, lastPlayer
+    return count, lastContestant
 end
 
 local function sendState(phase, message, timeLeft, aliveCount)
@@ -505,15 +655,22 @@ local function runRound()
     participants = {}
     roundActive = true
 
+    local contestants = {}
     for index, player in ipairs(roster) do
         participants[player] = true
         alive[player] = true
+        table.insert(contestants, player)
+
         local character = preparePlayer(player)
+        local humanoid = character:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            humanoid.UseJumpPower = true
+            humanoid.JumpPower = Config.PLAYER_JUMP_POWER
+        end
         local angle = math.pi * 2 * (index - 1) / math.max(#roster, 1)
-        local spawnOffset = Vector3.new(math.cos(angle) * 11, 14, math.sin(angle) * 11)
+        local spawnOffset = Vector3.new(math.cos(angle) * 5, 9, math.sin(angle) * 5)
         character:PivotTo(CFrame.new(Config.ARENA_CENTER + spawnOffset))
 
-        local humanoid = character:FindFirstChildOfClass("Humanoid")
         if humanoid then
             humanoid.Died:Connect(function()
                 alive[player] = false
@@ -524,18 +681,36 @@ local function runRound()
         end
     end
 
+    if #roster == 1 then
+        for index = 1, Config.SOLO_BOT_COUNT do
+            local angle = math.pi * 2 * index / (Config.SOLO_BOT_COUNT + 1)
+            local spawnPosition = Config.ARENA_CENTER + Vector3.new(math.cos(angle) * 6, 9, math.sin(angle) * 6)
+            local bot = createBot(index, spawnPosition)
+            alive[bot] = true
+            table.insert(contestants, bot)
+            bot.Humanoid.Died:Connect(function()
+                alive[bot] = false
+            end)
+            runBotAI(bot)
+        end
+    end
+
     sendState("Round", "MAP: " .. currentMapName, Config.ROUND_SECONDS, countAlive())
     local secondsSinceRise = 0
     local winnerPaid = false
     local finished = false
 
     for remaining = Config.ROUND_SECONDS, 1, -1 do
-        local aliveCount, lastPlayer = countAlive()
+        local aliveCount, lastContestant = countAlive()
         if aliveCount <= 1 and remaining < Config.ROUND_SECONDS - 4 then
-            if aliveCount == 1 and lastPlayer then
-                reward(lastPlayer, Config.WIN_REWARD, true)
-                winnerPaid = true
-                sendState("Winner", lastPlayer.DisplayName .. " WINS!", 0, 1)
+            if aliveCount == 1 and lastContestant then
+                if typeof(lastContestant) == "Instance" and lastContestant:IsA("Player") then
+                    reward(lastContestant, Config.WIN_REWARD, true)
+                    winnerPaid = true
+                    sendState("Winner", lastContestant.DisplayName .. " WINS!", 0, 1)
+                else
+                    sendState("Winner", lastContestant.Name .. " WINS!", 0, 1)
+                end
             else
                 sendState("Finished", "Nobody survived this round.", 0, 0)
             end
@@ -548,16 +723,18 @@ local function runRound()
         secondsSinceRise += 1
         if secondsSinceRise >= Config.LAVA_RISE_INTERVAL then
             local target = lava.Position + Vector3.new(0, Config.LAVA_RISE_AMOUNT, 0)
-            TweenService:Create(lava, TweenInfo.new(0.8, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Position = target }):Play()
+            TweenService:Create(lava, TweenInfo.new(0.8, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = target}):Play()
             secondsSinceRise = 0
         end
     end
 
     if not finished then
-        local aliveCount, lastPlayer = countAlive()
-        if aliveCount == 1 and lastPlayer and not winnerPaid then
-            reward(lastPlayer, Config.WIN_REWARD, true)
-            sendState("Winner", lastPlayer.DisplayName .. " WINS!", 0, 1)
+        local aliveCount, lastContestant = countAlive()
+        if aliveCount == 1 and lastContestant then
+            if typeof(lastContestant) == "Instance" and lastContestant:IsA("Player") and not winnerPaid then
+                reward(lastContestant, Config.WIN_REWARD, true)
+            end
+            sendState("Winner", lastContestant.Name .. " WINS!", 0, 1)
         elseif aliveCount > 1 then
             sendState("Finished", "Time's up! Multiple survivors.", 0, aliveCount)
         else
@@ -572,8 +749,15 @@ local function runRound()
             teleportToLobby(player)
         end
     end
+    for contestant in pairs(alive) do
+        if type(contestant) == "table" and contestant.IsBot then
+            botByModel[contestant.Model] = nil
+            if contestant.Model then contestant.Model:Destroy() end
+        end
+    end
     alive = {}
     participants = {}
+    botByModel = {}
     task.wait(Config.POST_ROUND_SECONDS)
     arenaFolder:ClearAllChildren()
 end
