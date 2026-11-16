@@ -691,9 +691,17 @@ local function runBotAI(bot)
                 end
 
                 if humanoid.Health > 0 and alive[bot] and platformBelow(root) == currentRecord then
-                    humanoid:MoveTo(landingPosition)
-                    task.wait(0.05)
-                    humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+                    local groundedDeadline = os.clock() + 0.7
+                    while os.clock() < groundedDeadline and humanoid.Health > 0 and alive[bot] do
+                        if humanoid.FloorMaterial ~= Enum.Material.Air then break end
+                        task.wait(0.05)
+                    end
+
+                    if humanoid.FloorMaterial ~= Enum.Material.Air and platformBelow(root) == currentRecord then
+                        humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+                        task.wait(0.04)
+                        humanoid:MoveTo(landingPosition)
+                    end
 
                     if not waitForLanding(root, target, 3.5) then
                         -- Do not assume a jump succeeded. Recover on the current platform
