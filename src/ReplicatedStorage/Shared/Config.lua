@@ -1,5 +1,8 @@
 local Config = {}
 
+-- Monetization
+Config.VIP_GAME_PASS_ID = 2087837274
+
 -- Match flow
 Config.MIN_PLAYERS = 1
 Config.SOLO_BOT_COUNT = 2
