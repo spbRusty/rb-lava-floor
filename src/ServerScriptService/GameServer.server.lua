@@ -697,7 +697,7 @@ local function runRound()
             humanoid.JumpPower = Config.PLAYER_JUMP_POWER
         end
         local angle = math.pi * 2 * (index - 1) / math.max(#roster, 1)
-        local spawnOffset = Vector3.new(math.cos(angle) * 5, 9, math.sin(angle) * 5)
+        local spawnOffset = Vector3.new(math.cos(angle) * 5, 9.5, math.sin(angle) * 5)
         character:PivotTo(CFrame.new(Config.ARENA_CENTER + spawnOffset))
 
         if humanoid then
