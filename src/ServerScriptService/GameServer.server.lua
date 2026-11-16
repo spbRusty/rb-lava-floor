@@ -316,7 +316,7 @@ local function buildArena()
         local spin = TweenService:Create(
             beam,
             TweenInfo.new(4.5 + hazardIndex * 0.7, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, -1),
-            { CFrame = startCFrame * CFrame.Angles(0, math.rad(360), 0) }
+            { CFrame = startCFrame * CFrame.Angles(0, math.rad(359), 0) }
         )
         spin:Play()
     end
@@ -440,7 +440,7 @@ local function runRound()
             break
         end
 
-        sendState("Round", "THE LAVA IS RISING!", remaining, aliveCount)
+        sendState("Round", "DODGE THE SWEEPERS  •  THE LAVA IS RISING!", remaining, aliveCount)
         task.wait(1)
         secondsSinceRise += 1
         if secondsSinceRise >= Config.LAVA_RISE_INTERVAL then
