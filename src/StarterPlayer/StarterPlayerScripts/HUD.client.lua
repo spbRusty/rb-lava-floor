@@ -361,6 +361,28 @@ local function showResult(won, message)
     end)
 end
 
+
+-- VIP pass purchase button
+local MarketplaceService = game:GetService("MarketplaceService")
+local vipButton = create("TextButton", {
+    Name = "VIPButton",
+    AnchorPoint = Vector2.new(0.5, 1),
+    Position = UDim2.new(0.5, 0, 1, -24),
+    Size = UDim2.fromOffset(190, 46),
+    BackgroundColor3 = Color3.fromRGB(166, 112, 28),
+    BorderSizePixel = 0,
+    Font = Enum.Font.GothamBlack,
+    Text = "★  GET VIP",
+    TextColor3 = Color3.fromRGB(255, 255, 255),
+    TextSize = 16,
+    AutoButtonColor = true,
+}, gui)
+corner(vipButton, 14)
+stroke(vipButton, COLORS.gold, 0.2, 1.5)
+vipButton.Activated:Connect(function()
+    MarketplaceService:PromptGamePassPurchase(player, 2087837274)
+end)
+
 -- Bottom toast
 local toast = create("Frame", {
     Name = "Toast",
