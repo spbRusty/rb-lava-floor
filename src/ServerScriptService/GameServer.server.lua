@@ -51,16 +51,19 @@ local generatedPlatforms = {}
 local lastLayoutSignature = nil
 
 local PALETTE = {
-    dark = Color3.fromRGB(24, 31, 45),
-    slate = Color3.fromRGB(48, 61, 80),
-    steel = Color3.fromRGB(87, 112, 139),
-    blue = Color3.fromRGB(56, 151, 205),
-    cyan = Color3.fromRGB(78, 218, 232),
-    orange = Color3.fromRGB(255, 112, 44),
-    gold = Color3.fromRGB(255, 193, 78),
-    green = Color3.fromRGB(91, 225, 157),
-    red = Color3.fromRGB(231, 64, 42),
-    cream = Color3.fromRGB(222, 224, 218),
+    dark = Color3.fromRGB(38, 55, 92),
+    slate = Color3.fromRGB(62, 91, 139),
+    steel = Color3.fromRGB(91, 157, 205),
+    blue = Color3.fromRGB(42, 145, 232),
+    cyan = Color3.fromRGB(65, 225, 245),
+    orange = Color3.fromRGB(255, 126, 38),
+    gold = Color3.fromRGB(255, 215, 62),
+    green = Color3.fromRGB(104, 224, 91),
+    red = Color3.fromRGB(255, 65, 76),
+    cream = Color3.fromRGB(255, 246, 220),
+    purple = Color3.fromRGB(153, 105, 235),
+    pink = Color3.fromRGB(255, 105, 180),
+    lime = Color3.fromRGB(177, 238, 66),
 }
 
 local function makePart(parent, name, size, position, color, material, shape)
@@ -109,36 +112,36 @@ local function addSign(parent, name, text, position, size, color, rotation, face
 end
 
 local function setupLighting()
-    Lighting.ClockTime = 17.8
-    Lighting.Brightness = 2.2
-    Lighting.Ambient = Color3.fromRGB(104, 116, 145)
-    Lighting.OutdoorAmbient = Color3.fromRGB(125, 133, 153)
-    Lighting.EnvironmentDiffuseScale = 0.35
-    Lighting.EnvironmentSpecularScale = 0.55
+    Lighting.ClockTime = 14.2
+    Lighting.Brightness = 3
+    Lighting.Ambient = Color3.fromRGB(145, 159, 190)
+    Lighting.OutdoorAmbient = Color3.fromRGB(165, 178, 205)
+    Lighting.EnvironmentDiffuseScale = 0.55
+    Lighting.EnvironmentSpecularScale = 0.65
     Lighting.GlobalShadows = true
 
     local atmosphere = Lighting:FindFirstChildOfClass("Atmosphere") or Instance.new("Atmosphere")
-    atmosphere.Density = 0.28
-    atmosphere.Offset = 0.12
-    atmosphere.Color = Color3.fromRGB(193, 204, 224)
-    atmosphere.Decay = Color3.fromRGB(104, 78, 72)
-    atmosphere.Glare = 0.25
-    atmosphere.Haze = 1.2
+    atmosphere.Density = 0.16
+    atmosphere.Offset = 0.18
+    atmosphere.Color = Color3.fromRGB(210, 230, 255)
+    atmosphere.Decay = Color3.fromRGB(120, 155, 205)
+    atmosphere.Glare = 0.12
+    atmosphere.Haze = 0.55
     atmosphere.Parent = Lighting
 
     local grade = Lighting:FindFirstChild("LavaColorGrade") or Instance.new("ColorCorrectionEffect")
     grade.Name = "LavaColorGrade"
-    grade.Brightness = 0.015
-    grade.Contrast = 0.12
-    grade.Saturation = 0.08
-    grade.TintColor = Color3.fromRGB(255, 235, 220)
+    grade.Brightness = 0.035
+    grade.Contrast = 0.04
+    grade.Saturation = 0.28
+    grade.TintColor = Color3.fromRGB(245, 250, 255)
     grade.Parent = Lighting
 
     local bloom = Lighting:FindFirstChild("LavaBloom") or Instance.new("BloomEffect")
     bloom.Name = "LavaBloom"
-    bloom.Intensity = 0.35
-    bloom.Size = 28
-    bloom.Threshold = 1.15
+    bloom.Intensity = 0.22
+    bloom.Size = 24
+    bloom.Threshold = 1.35
     bloom.Parent = Lighting
 end
 
@@ -232,8 +235,8 @@ end
 local function buildLobby()
     lobby:ClearAllChildren()
 
-    makePart(lobby, "LobbyFloor", Vector3.new(150, 4, 150), Vector3.new(0, -2, 0), PALETTE.dark, Enum.Material.Slate)
-    makePart(lobby, "CentralStage", Vector3.new(48, 3, 34), Vector3.new(0, 1, -27), PALETTE.slate, Enum.Material.Metal)
+    makePart(lobby, "LobbyFloor", Vector3.new(150, 4, 150), Vector3.new(0, -2, 0), PALETTE.blue, Enum.Material.SmoothPlastic)
+    makePart(lobby, "CentralStage", Vector3.new(48, 3, 34), Vector3.new(0, 1, -27), PALETTE.purple, Enum.Material.SmoothPlastic)
     addNeonTrim(lobby, "StageFrontGlow", Vector3.new(48, 0.35, 0.45), Vector3.new(0, 2.7, -44), PALETTE.orange)
     addSign(lobby, "MainTitle", "FLOOR  IS  LAVA", Vector3.new(0, 17, -48), Vector3.new(42, 10, 1), PALETTE.orange)
     addSign(lobby, "SubTitle", "CLIMB  •  SURVIVE  •  WIN", Vector3.new(0, 10, -48), Vector3.new(30, 3, 1), PALETTE.cream)
@@ -366,10 +369,10 @@ local function buildArena()
     local rotationCos = math.cos(rotationAngle)
     local rotationSin = math.sin(rotationAngle)
 
-    makePart(arenaFolder, "ArenaFoundation", Vector3.new(180, 5, 180), center + Vector3.new(0, -20, 0), PALETTE.dark, Enum.Material.Basalt)
+    makePart(arenaFolder, "ArenaFoundation", Vector3.new(180, 5, 180), center + Vector3.new(0, -20, 0), Color3.fromRGB(55, 74, 120), Enum.Material.Slate)
     addNeonTrim(arenaFolder, "FoundationRing", Vector3.new(182, 0.5, 182), center + Vector3.new(0, -17.2, 0), accent)
 
-    local base = makePart(arenaFolder, "StartPlatform", Vector3.new(14, 3, 14), center + Vector3.new(0, 5, 0), PALETTE.slate, Enum.Material.Metal)
+    local base = makePart(arenaFolder, "StartPlatform", Vector3.new(14, 3, 14), center + Vector3.new(0, 5, 0), PALETTE.green, Enum.Material.SmoothPlastic)
     addNeonTrim(arenaFolder, "StartPlatformGlow", Vector3.new(14.2, 0.25, 0.3), base.Position + Vector3.new(0, 1.62, -6.8), accent)
     generatedPlatforms[1] = {Part = base, Layer = 0, Lane = 0, TopY = base.Position.Y + base.Size.Y / 2}
 
@@ -392,8 +395,8 @@ local function buildArena()
                 string.format("Platform_L%d_%d", layer, lane),
                 Vector3.new(sizeX, 2.5, sizeZ),
                 center + Vector3.new(x, y, z),
-                (layer + lane) % 2 == 0 and PALETTE.steel or PALETTE.slate,
-                Enum.Material.Metal
+                ({PALETTE.blue, PALETTE.purple, PALETTE.green, PALETTE.gold, PALETTE.cyan, PALETTE.pink})[((layer * 3 + lane * 2 - 1) % 6) + 1],
+                Enum.Material.SmoothPlastic
             )
             platform.TopSurface = Enum.SurfaceType.Smooth
             addNeonTrim(arenaFolder, "PlatformEdgeA_L" .. layer .. "_" .. lane,
@@ -420,7 +423,7 @@ local function buildArena()
         local radius = rng:NextNumber(82, 88)
         local height = rng:NextNumber(10, 24)
         local position = center + Vector3.new(math.cos(angle) * radius, height / 2 - 2, math.sin(angle) * radius)
-        local tower = makePart(arenaFolder, "Tower_" .. index, Vector3.new(rng:NextNumber(4, 7), height, rng:NextNumber(4, 7)), position, PALETTE.slate, Enum.Material.Concrete)
+        local tower = makePart(arenaFolder, "Tower_" .. index, Vector3.new(rng:NextNumber(4, 7), height, rng:NextNumber(4, 7)), position, ({PALETTE.blue, PALETTE.purple, PALETTE.green, PALETTE.orange})[(index % 4) + 1], Enum.Material.SmoothPlastic)
         addNeonTrim(arenaFolder, "TowerCap_" .. index, Vector3.new(tower.Size.X + 0.3, 0.3, tower.Size.Z + 0.3), tower.Position + Vector3.new(0, height / 2, 0), accent)
     end
 
@@ -583,68 +586,136 @@ end
 local function runBotAI(bot)
     task.spawn(function()
         local humanoid = bot.Humanoid
-        while roundActive and alive[bot] and bot.Model.Parent and humanoid.Health > 0 do
-            local root = bot.Model:FindFirstChild("HumanoidRootPart")
-            if not root then break end
+        local model = bot.Model
+        local rayParams = RaycastParams.new()
+        rayParams.FilterType = Enum.RaycastFilterType.Exclude
+        rayParams.FilterDescendantsInstances = {model}
+        rayParams.IgnoreWater = true
 
-            local currentRecord = nil
-            local bestScore = math.huge
-            for _, record in ipairs(generatedPlatforms) do
-                local horizontal = (Vector3.new(root.Position.X, 0, root.Position.Z) - Vector3.new(record.Part.Position.X, 0, record.Part.Position.Z)).Magnitude
-                local vertical = root.Position.Y - record.TopY
-                if vertical >= -1 and vertical < 8 and horizontal < 18 then
-                    local score = math.abs(vertical - 3) + horizontal * 0.02
-                    if score < bestScore then
-                        bestScore = score
-                        currentRecord = record
+        local function platformBelow(root)
+            local result = workspace:Raycast(root.Position + Vector3.new(0, 1, 0), Vector3.new(0, -9, 0), rayParams)
+            if result then
+                for _, record in ipairs(generatedPlatforms) do
+                    if result.Instance == record.Part then
+                        return record
                     end
                 end
             end
 
-            local options = {}
-            if currentRecord then
-                for _, record in ipairs(generatedPlatforms) do
-                    local sameNextLayer = record.Layer == currentRecord.Layer + 1
-                    local connectedLane = currentRecord.Layer == 0 or math.abs(record.Lane - currentRecord.Lane) <= 1
-                    if sameNextLayer and connectedLane then
-                        table.insert(options, record)
+            -- Fallback for the brief frames when the humanoid is settling onto a platform.
+            local best, bestDistance = nil, math.huge
+            for _, record in ipairs(generatedPlatforms) do
+                local dx = root.Position.X - record.Part.Position.X
+                local dz = root.Position.Z - record.Part.Position.Z
+                local horizontal = math.sqrt(dx * dx + dz * dz)
+                local heightAbove = root.Position.Y - record.TopY
+                if horizontal <= math.min(record.Part.Size.X, record.Part.Size.Z) * 0.42
+                    and heightAbove >= 0.5 and heightAbove <= 6 then
+                    local score = horizontal + math.abs(heightAbove - 3) * 0.35
+                    if score < bestDistance then
+                        best, bestDistance = record, score
                     end
+                end
+            end
+            return best
+        end
+
+        local function waitForLanding(root, target, timeout)
+            local deadline = os.clock() + timeout
+            while os.clock() < deadline and humanoid.Health > 0 and alive[bot] and model.Parent do
+                local landed = platformBelow(root)
+                if landed == target and humanoid.FloorMaterial ~= Enum.Material.Air then
+                    return true
+                end
+                task.wait(0.08)
+            end
+            return false
+        end
+
+        while roundActive and alive[bot] and model.Parent and humanoid.Health > 0 do
+            local root = model:FindFirstChild("HumanoidRootPart")
+            if not root then break end
+
+            local currentRecord = platformBelow(root)
+            if not currentRecord then
+                task.wait(0.12)
+                continue
+            end
+
+            local options = {}
+            for _, record in ipairs(generatedPlatforms) do
+                if record.Layer == currentRecord.Layer + 1 then
+                    table.insert(options, record)
                 end
             end
 
             if #options > 0 then
+                -- Prefer the same lane: it is the shortest and most reliable jump.
                 table.sort(options, function(a, b)
-                    local aDistance = (Vector3.new(a.Part.Position.X, 0, a.Part.Position.Z) - Vector3.new(root.Position.X, 0, root.Position.Z)).Magnitude
-                    local bDistance = (Vector3.new(b.Part.Position.X, 0, b.Part.Position.Z) - Vector3.new(root.Position.X, 0, root.Position.Z)).Magnitude
+                    local aLane = math.abs(a.Lane - currentRecord.Lane)
+                    local bLane = math.abs(b.Lane - currentRecord.Lane)
+                    if aLane ~= bLane then return aLane < bLane end
+                    local aDistance = (a.Part.Position - currentRecord.Part.Position).Magnitude
+                    local bDistance = (b.Part.Position - currentRecord.Part.Position).Magnitude
                     return aDistance < bDistance
                 end)
-
-                -- Move to the edge first, then jump across the small physical gap.
-                local target = options[math.random(1, math.min(2, #options))]
-                local direction = Vector3.new(
-                    target.Part.Position.X - currentRecord.Part.Position.X,
-                    0,
-                    target.Part.Position.Z - currentRecord.Part.Position.Z
-                ).Unit
-                local edgeScale = (currentRecord.Part.Size.X / 2 - 0.8) / math.max(math.abs(direction.X), math.abs(direction.Z), 0.01)
-                local targetScale = (target.Part.Size.X / 2 - 0.8) / math.max(math.abs(direction.X), math.abs(direction.Z), 0.01)
-                local launchPoint = currentRecord.Part.Position + direction * edgeScale
-                local landingPoint = target.Part.Position - direction * targetScale
-
-                humanoid:MoveTo(Vector3.new(launchPoint.X, currentRecord.Part.Position.Y + 4.25, launchPoint.Z))
-                task.wait(0.45)
-                if humanoid.Health > 0 and alive[bot] then
-                    humanoid.Jump = true
-                    humanoid:MoveTo(Vector3.new(landingPoint.X, target.Part.Position.Y + 4.25, landingPoint.Z))
+                local target = options[1]
+                local offset = target.Part.Position - currentRecord.Part.Position
+                local flatOffset = Vector3.new(offset.X, 0, offset.Z)
+                if flatOffset.Magnitude < 0.01 then
+                    task.wait(0.15)
+                    continue
                 end
-                task.wait(1.25)
+                local direction = flatOffset.Unit
+
+                local function edgeDistance(part)
+                    local dx = math.abs(direction.X)
+                    local dz = math.abs(direction.Z)
+                    local alongX = dx > 0.001 and (part.Size.X * 0.5 - 1.0) / dx or math.huge
+                    local alongZ = dz > 0.001 and (part.Size.Z * 0.5 - 1.0) / dz or math.huge
+                    return math.max(0, math.min(alongX, alongZ))
+                end
+
+                local launchPoint = currentRecord.Part.Position + direction * edgeDistance(currentRecord.Part)
+                local landingPoint = target.Part.Position - direction * edgeDistance(target.Part)
+                local launchPosition = Vector3.new(launchPoint.X, currentRecord.TopY + 3, launchPoint.Z)
+                local landingPosition = Vector3.new(landingPoint.X, target.TopY + 3, landingPoint.Z)
+
+                humanoid:MoveTo(launchPosition)
+                local approachDeadline = os.clock() + 3
+                while os.clock() < approachDeadline and humanoid.Health > 0 and alive[bot] do
+                    local delta = Vector3.new(root.Position.X - launchPosition.X, 0, root.Position.Z - launchPosition.Z)
+                    if delta.Magnitude <= 1.25 then break end
+                    if platformBelow(root) ~= currentRecord then break end
+                    task.wait(0.08)
+                end
+
+                if humanoid.Health > 0 and alive[bot] and platformBelow(root) == currentRecord then
+                    humanoid:MoveTo(landingPosition)
+                    task.wait(0.05)
+                    humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+
+                    if not waitForLanding(root, target, 3.5) then
+                        -- Do not assume a jump succeeded. Recover on the current platform
+                        -- and retry from a grounded state on the next AI iteration.
+                        local recovery = currentRecord.Part.Position + Vector3.new(0, currentRecord.TopY - currentRecord.Part.Position.Y + 3, 0)
+                        humanoid:MoveTo(recovery)
+                        local recoveryDeadline = os.clock() + 1.8
+                        while os.clock() < recoveryDeadline and humanoid.Health > 0 and alive[bot] do
+                            if platformBelow(root) == currentRecord and humanoid.FloorMaterial ~= Enum.Material.Air then
+                                break
+                            end
+                            task.wait(0.08)
+                        end
+                    end
+                end
             else
-                task.wait(0.3)
+                task.wait(0.2)
             end
+            task.wait(0.12)
         end
     end)
 end
-
 local function countAlive()
     local count, lastContestant = 0, nil
     for contestant, isAlive in pairs(alive) do
