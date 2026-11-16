@@ -277,6 +277,7 @@ local function loadStats(player)
     elseif not success then
         warn("Could not load FloorIsLava stats for " .. player.Name)
     end
+    if success then updateGlobalWins(player, wins.Value) end
 end
 
 local function saveStats(player)
