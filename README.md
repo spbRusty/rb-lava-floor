@@ -1,72 +1,73 @@
 # FLOOR IS LAVA
 
-A round-based Roblox survival game. Climb a shifting obstacle arena, dodge moving sweepers, stay above the rising lava, and be the last player standing.
+Многопользовательская игра на выживание в Roblox. Забирайтесь по меняющейся арене с препятствиями, уворачивайтесь от вращающихся ловушек и спасайтесь от поднимающейся лавы. Побеждает последний выживший.
 
-## Current build
+## Текущая версия
 
-### Gameplay
-- Automatic rounds from one real player; two lightweight NPC rivals join solo sessions.
-- Automatic multiplayer rounds; NPC rivals are disabled when two or more real players are present.
-- Intermission, survival timer, rising lava, winner detection and lobby return.
-- A procedural arena generator creates a fresh sector each round, with randomized lane count, platform positions, heights, sizes, colors and hazard placement.
-- Every platform layer has at least two reachable upward choices; platform spacing and height steps are constrained for standard Roblox jumping.
-- Moving neon sweepers on elevated platforms.
-- Lava and sweeper contact eliminate players and NPC rivals.
-- Coins for participation and a larger reward for the winner.
-- Wins and coins saved with DataStore.
-- Global top-10 wins leaderboard displayed in the lobby and refreshed every 60 seconds.
-- Global ranking is backed by an OrderedDataStore and updated when a player wins.
+### Игровой процесс
+- Раунды запускаются даже при одном реальном игроке: в одиночной игре появляются два лёгких NPC-соперника.
+- В многопользовательской игре NPC не появляются, если на сервере находятся два или более реальных игрока.
+- Между раундами есть перерыв. Предусмотрены таймер выживания, поднимающаяся лава, определение победителя и возвращение в лобби.
+- Генератор процедурно создаёт новую арену для каждого раунда. Меняются количество дорожек, расположение, высота и размеры платформ, цвета и места появления ловушек.
+- С каждого уровня есть как минимум два доступных варианта подъёма. Расстояния между платформами и перепады высоты ограничены так, чтобы на них можно было запрыгнуть стандартным прыжком Roblox.
+- На высоких платформах расположены движущиеся неоновые ловушки.
+- Контакт с лавой или ловушкой выводит из раунда как игроков, так и NPC.
+- За участие начисляются монеты, победитель получает дополнительную награду.
+- Победы и монеты сохраняются через DataStore.
+- В лобби отображается глобальный рейтинг десяти лучших игроков по победам. Он обновляется раз в 60 секунд.
+- Глобальный рейтинг использует OrderedDataStore и обновляется после победы игрока.
 
-### Visual direction
-- Stylized volcanic / industrial world built from standard Roblox Parts.
-- Lobby with a central stage, neon trims, signs and colored lighting.
-- Procedural platform layouts with randomized silhouettes, spacing and accent colors.
-- Arena foundations, towers, glowing platform edges and moving hazards.
-- Neon lava with PointLight and particle sparks.
-- Atmosphere, color grading and bloom.
+### Визуальное оформление
+- Стилизованный вулканический и индустриальный мир, собранный из стандартных деталей Roblox (Parts).
+- Лобби с центральной площадкой, неоновыми элементами, вывесками и цветным освещением.
+- Процедурные арены со случайной компоновкой платформ, разными силуэтами и цветовыми акцентами.
+- Основания арен, башни, светящиеся края платформ и движущиеся препятствия.
+- Неоновая лава с источниками света PointLight и частицами-искрами.
+- Атмосферные эффекты, цветокоррекция и Bloom.
 
-### Interface
-- Responsive round HUD with phase, countdown and objective text.
-- Coins and wins counters.
-- Live survivor count and current arena badge.
-- Animated event notifications.
-- Large animated victory / round-result panel.
-- Scales down for narrow screens.
+### Интерфейс
+- Адаптивный HUD с текущей фазой раунда, таймером и подсказками.
+- Счётчики монет и побед.
+- Текущее количество выживших и название сектора.
+- Анимированные уведомления о событиях.
+- Крупная анимированная панель победы и итогов раунда.
+- Интерфейс адаптируется под узкие экраны телефонов.
 
-## Project setup
+## Установка и запуск
 
-This repository uses [Rojo](https://rojo.space/) to sync Luau files into Roblox Studio.
+Для синхронизации скриптов Luau с Roblox Studio используется [Rojo](https://rojo.space/).
 
-1. Install Rojo and the Rojo Studio plugin.
-2. Clone this repository.
-3. Run `rojo serve` from the repository directory.
-4. Connect the Rojo plugin in Roblox Studio.
-5. Publish the experience and enable **Game Settings → Security → Enable Studio Access to API Services** to test DataStores.
-6. Use **Test → Start** with one player to test the solo NPC rivals, or start a two-client server test for multiplayer.
+1. Установите Rojo и плагин Rojo для Roblox Studio.
+2. Склонируйте этот репозиторий.
+3. Откройте папку репозитория в терминале и выполните `rojo serve`.
+4. Подключитесь к серверу Rojo через плагин в Roblox Studio.
+5. Чтобы проверить DataStore, опубликуйте игру и включите **Game Settings → Security → Enable Studio Access to API Services**.
+6. Для проверки одиночной игры выберите **Test → Start** с одним игроком. Для многопользовательского режима запустите тест сервера с двумя клиентами.
 
-The game starts with one real player and adds two NPC rivals in solo sessions. When two or more real players are present, NPC rivals are not spawned.
+Если на сервере только один реальный игрок, игра добавляет двух NPC-соперников. Когда реальных игроков два или больше, NPC не создаются.
 
-While the place is unpublished, DataStores are unavailable: the server logs a warning and the match loop keeps running without saving stats or the global leaderboard, so local Studio playtests work without API access.
+Пока игра не опубликована, DataStore недоступен. Сервер выведет предупреждение и продолжит запускать раунды без сохранения статистики и глобального рейтинга. Локально тестировать игру в Studio можно и без доступа к API.
 
-## Required Studio test pass
+## Что проверять в Roblox Studio
 
-Studio verification is required after each gameplay update. Verify:
-- Procedural sectors vary between rounds and all generated platform routes remain jumpable.
-- Each platform offers at least two upward route choices.
-- Two NPC rivals spawn only when exactly one real player is present and can climb the generated platforms.
-- Moving sweepers rotate and eliminate both players and NPC rivals on contact.
-- Lava rises at the intended speed and eliminates players reliably.
-- Players joining mid-round remain in the lobby until the next round.
-- A winner receives exactly one win reward.
-- Participation rewards are granted once per participant.
-- DataStore and OrderedDataStore access work in a published test experience.
-- Global leaderboard displays the correct top 10 players and refreshes without errors.
-- HUD and result panel remain readable on phone aspect ratios.
+После каждого обновления игрового процесса необходимо проверять игру непосредственно в Roblox Studio:
 
-## Development principles
+- Арены меняются от раунда к раунду, а все маршруты между платформами остаются проходимыми прыжками.
+- С каждой платформы доступны как минимум два варианта подъёма.
+- Два NPC появляются только при одном реальном игроке и умеют подниматься по сгенерированным платформам.
+- Вращающиеся ловушки работают и выводят из раунда игроков и NPC при столкновении.
+- Лава поднимается с заданной скоростью и корректно выводит игроков из раунда.
+- Игроки, подключившиеся во время раунда, остаются в лобби до следующего раунда.
+- Победитель получает награду за победу ровно один раз.
+- Награда за участие начисляется каждому участнику ровно один раз.
+- DataStore и OrderedDataStore работают в опубликованной тестовой игре.
+- Глобальный рейтинг показывает правильные десять результатов и обновляется без ошибок.
+- HUD и итоговая панель остаются читаемыми на экранах телефонов.
 
-- Prefer strong composition, lighting, color and UI over complex custom models.
-- Keep maps built from simple, performant Roblox Parts.
-- Keep round state, eliminations and rewards server-authoritative.
-- Add new maps and round modifiers before expensive assets.
-- Add monetization only after the core loop is tested and enjoyable.
+## Принципы разработки
+
+- Делать упор на композицию, освещение, цвет и интерфейс, а не на сложные пользовательские модели.
+- Использовать простые и производительные детали Roblox для построения арен.
+- Обрабатывать состояние раунда, устранение участников и награды на сервере.
+- Сначала добавлять новые варианты арен и модификаторы раундов, а не тяжёлые ресурсы.
+- Добавлять монетизацию только после проверки основного игрового цикла.
