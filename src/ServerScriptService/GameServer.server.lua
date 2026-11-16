@@ -62,12 +62,13 @@ local function addNeonTrim(parent, name, size, position, color)
     return trim
 end
 
-local function addSign(parent, name, text, position, size, color)
+local function addSign(parent, name, text, position, size, color, rotation, face)
     local board = makePart(parent, name, size, position, PALETTE.dark, Enum.Material.Metal)
+    if rotation then board.CFrame = CFrame.new(position) * rotation end
     board.CanCollide = false
     local surface = Instance.new("SurfaceGui")
     surface.Name = "SignGui"
-    surface.Face = Enum.NormalId.Front
+    surface.Face = face or Enum.NormalId.Back
     surface.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
     surface.PixelsPerStud = 45
     surface.Parent = board
@@ -119,7 +120,7 @@ local function setupLighting()
 end
 
 local function buildLobby()
-    if lobby:FindFirstChild("LobbyFloor") then return end
+    lobby:ClearAllChildren()
 
     makePart(lobby, "LobbyFloor", Vector3.new(150, 4, 150), Vector3.new(0, -2, 0), PALETTE.dark, Enum.Material.Slate)
     makePart(lobby, "CentralStage", Vector3.new(48, 3, 34), Vector3.new(0, 1, -27), PALETTE.slate, Enum.Material.Metal)
@@ -157,8 +158,8 @@ local function buildLobby()
         addNeonTrim(lobby, "OuterPadGlow_" .. index, Vector3.new(10.1, 0.22, 0.22), Vector3.new(x, 0.65, z - 4.8), PALETTE.cyan)
     end
 
-    addSign(lobby, "RulesBoard", "STAY ABOVE THE LAVA", Vector3.new(-48, 8, -4), Vector3.new(1, 10, 24), PALETTE.gold)
-    addSign(lobby, "RewardsBoard", "WIN  +50 COINS", Vector3.new(48, 8, -4), Vector3.new(1, 10, 24), PALETTE.green)
+    addSign(lobby, "RulesBoard", "STAY ABOVE THE LAVA", Vector3.new(-48, 8, -4), Vector3.new(1, 10, 24), PALETTE.gold, CFrame.Angles(0, math.rad(-90), 0), Enum.NormalId.Front)
+    addSign(lobby, "RewardsBoard", "WIN  +50 COINS", Vector3.new(48, 8, -4), Vector3.new(1, 10, 24), PALETTE.green, CFrame.Angles(0, math.rad(90), 0), Enum.NormalId.Front)
 end
 
 local function teleportToLobby(player)
