@@ -362,6 +362,9 @@ local function buildArena()
     local center = Config.ARENA_CENTER
     local accentChoices = {PALETTE.orange, PALETTE.cyan, PALETTE.gold, PALETTE.green}
     local accent = accentChoices[rng:NextInteger(1, #accentChoices)]
+    local rotationAngle = rng:NextNumber(0, math.pi * 2)
+    local rotationCos = math.cos(rotationAngle)
+    local rotationSin = math.sin(rotationAngle)
 
     makePart(arenaFolder, "ArenaFoundation", Vector3.new(180, 5, 180), center + Vector3.new(0, -20, 0), PALETTE.dark, Enum.Material.Basalt)
     addNeonTrim(arenaFolder, "FoundationRing", Vector3.new(182, 0.5, 182), center + Vector3.new(0, -17.2, 0), accent)
