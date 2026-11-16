@@ -5,8 +5,25 @@ local Lighting = game:GetService("Lighting")
 local TweenService = game:GetService("TweenService")
 
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
-local statsStore = DataStoreService:GetDataStore("FloorIsLava_PlayerStats_v1")
-local winsOrderedStore = DataStoreService:GetOrderedDataStore("FloorIsLava_GlobalWins_v1")
+
+-- DataStores only work in a published experience with "Studio Access to API Services"
+-- enabled. Fall back to nil stores so the place still runs locally in Studio.
+local function getStore(kind, name)
+    local ok, store = pcall(function()
+        if kind == "ordered" then
+            return DataStoreService:GetOrderedDataStore(name)
+        end
+        return DataStoreService:GetDataStore(name)
+    end)
+    if ok and store then
+        return store
+    end
+    warn("[FloorIsLava] DataStore '" .. name .. "' unavailable - running without persistence.")
+    return nil
+end
+
+local statsStore = getStore("regular", "FloorIsLava_PlayerStats_v1")
+local winsOrderedStore = getStore("ordered", "FloorIsLava_GlobalWins_v1")
 
 local function getOrCreate(parent, className, name)
     local object = parent:FindFirstChild(name)

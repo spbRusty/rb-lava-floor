@@ -44,6 +44,8 @@ This repository uses [Rojo](https://rojo.space/) to sync Luau files into Roblox 
 
 For solo testing only, temporarily set `MIN_PLAYERS = 1` in `src/ReplicatedStorage/Shared/Config.lua`. Restore it to 2 before publishing.
 
+While the place is unpublished, DataStores are unavailable: the server logs a warning and the match loop keeps running without saving stats or the global leaderboard, so local Studio playtests work without API access.
+
 ## Required Studio test pass
 
 The code has been committed, but this build has not been executed in Roblox Studio. Verify:
