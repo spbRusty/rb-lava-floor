@@ -27,7 +27,6 @@ arenaFolder.Parent = world
 
 local alive = {}
 local roundActive = false
-local currentStatus = "Ожидание игроков"
 
 local function makePart(parent, name, size, position, color, material)
     local part = Instance.new("Part")
@@ -201,7 +200,6 @@ local function countAlive()
 end
 
 local function sendState(phase, message, timeLeft, aliveCount)
-    currentStatus = message
     roundState:FireAllClients({
         Phase = phase,
         Message = message,
@@ -253,6 +251,7 @@ local function runRound()
         end
     end
 
+    local secondsSinceRise = 0
     for remaining = Config.ROUND_SECONDS, 1, -1 do
         local aliveCount, lastPlayer = countAlive()
         if aliveCount <= 1 and remaining < Config.ROUND_SECONDS - 5 then
@@ -267,9 +266,10 @@ local function runRound()
 
         sendState("Round", "ЛАВА ПОДНИМАЕТСЯ!", remaining, aliveCount)
         task.wait(1)
-
-        if remaining % math.max(1, math.floor(Config.LAVA_RISE_INTERVAL)) == 0 then
+        secondsSinceRise += 1
+        if secondsSinceRise >= Config.LAVA_RISE_INTERVAL then
             lava.Position += Vector3.new(0, Config.LAVA_RISE_AMOUNT, 0)
+            secondsSinceRise -= Config.LAVA_RISE_INTERVAL
         end
     end
 
