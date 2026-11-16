@@ -571,6 +571,7 @@ local function createBot(index, spawnPosition)
     model.PrimaryPart = root
     model.Parent = botFolder
     model:PivotTo(CFrame.new(spawnPosition))
+    pcall(function() root:SetNetworkOwner(nil) end)
     local record = {IsBot = true, Model = model, Humanoid = humanoid, Name = "BOT " .. index}
     botByModel[model] = record
     return record
