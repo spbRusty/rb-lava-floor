@@ -37,6 +37,7 @@ local PALETTE = {
     cyan = Color3.fromRGB(78, 218, 232),
     orange = Color3.fromRGB(255, 112, 44),
     gold = Color3.fromRGB(255, 193, 78),
+    green = Color3.fromRGB(91, 225, 157),
     red = Color3.fromRGB(231, 64, 42),
     cream = Color3.fromRGB(222, 224, 218),
 }
