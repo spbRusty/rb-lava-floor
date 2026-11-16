@@ -167,6 +167,10 @@ local function buildLeaderboard(parent)
     title.TextScaled = true
     title.Parent = surface
 
+    if not winsOrderedStore then
+        title.Text = "GLOBAL TOP 10  •  PUBLISH TO ENABLE"
+    end
+
     for index = 1, 10 do
         local row = Instance.new("TextLabel")
         row.Name = "Rank_" .. index
@@ -174,7 +178,7 @@ local function buildLeaderboard(parent)
         row.Position = UDim2.fromOffset(28, 92 + (index - 1) * 38)
         row.BackgroundTransparency = 1
         row.Font = Enum.Font.GothamBold
-        row.Text = string.format("%02d     ...", index)
+        row.Text = winsOrderedStore and string.format("%02d     ...", index) or "PUBLISH PLACE TO ENABLE"
         row.TextColor3 = index == 1 and PALETTE.gold or PALETTE.cream
         row.TextScaled = true
         row.TextXAlignment = Enum.TextXAlignment.Left
@@ -515,7 +519,7 @@ local function createBot(index, spawnPosition)
     root.Name = "HumanoidRootPart"
     root.Size = Vector3.new(2, 2, 1)
     root.Transparency = 1
-    root.CanCollide = false
+    root.CanCollide = true
     root.Anchored = false
     root.Position = spawnPosition
     root.Parent = model
@@ -525,6 +529,7 @@ local function createBot(index, spawnPosition)
     torso.Size = Vector3.new(2, 2, 1)
     torso.Color = index % 2 == 0 and Color3.fromRGB(62, 170, 220) or Color3.fromRGB(220, 112, 62)
     torso.Material = Enum.Material.SmoothPlastic
+    torso.CanCollide = false
     torso.Position = spawnPosition
     torso.Parent = model
 
@@ -534,6 +539,7 @@ local function createBot(index, spawnPosition)
     head.Size = Vector3.new(1.25, 1.25, 1.25)
     head.Color = Color3.fromRGB(238, 202, 158)
     head.Material = Enum.Material.SmoothPlastic
+    head.CanCollide = false
     head.Position = spawnPosition + Vector3.new(0, 1.55, 0)
     head.Parent = model
 
@@ -603,7 +609,7 @@ local function runBotAI(bot)
             if #options > 0 then
                 local target = options[math.random(1, #options)]
                 humanoid.Jump = true
-                humanoid:MoveTo(target.Part.Position + Vector3.new(0, 3.5, 0))
+                humanoid:MoveTo(target.Part.Position + Vector3.new(0, 2.25, 0))
                 task.wait(1.15)
             else
                 task.wait(0.3)
