@@ -482,7 +482,6 @@ local function buildArena()
                 TopY = platform.Position.Y + platform.Size.Y / 2,
             }
             generatedPlatforms[#generatedPlatforms + 1] = record
-            layerPlatforms[#layerPlatforms + 1] = record
         end
     end
 
@@ -857,8 +856,15 @@ local function runBotAI(bot)
                     return math.max(0, math.min(alongX, alongZ))
                 end
 
-                local launchPoint = currentRecord.Part.Position + direction * edgeDistance(currentRecord.Part)
-                local landingPoint = target.Part.Position - direction * edgeDistance(target.Part)
+                local launchPoint, landingPoint
+                if flatOffset.Magnitude <= 6.2 then
+                    -- Close, vertically stacked pads need a straight hop, not an edge-to-edge run.
+                    launchPoint = currentRecord.Part.Position
+                    landingPoint = target.Part.Position
+                else
+                    launchPoint = currentRecord.Part.Position + direction * edgeDistance(currentRecord.Part)
+                    landingPoint = target.Part.Position - direction * edgeDistance(target.Part)
+                end
                 local launchPosition = Vector3.new(launchPoint.X, currentRecord.TopY + 3, launchPoint.Z)
                 local landingPosition = Vector3.new(landingPoint.X, target.TopY + 3, landingPoint.Z)
 
