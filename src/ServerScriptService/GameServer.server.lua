@@ -443,48 +443,101 @@ local function buildArena()
     addNeonTrim(arenaFolder, "StartPlatformGlow", Vector3.new(14.2, 0.25, 0.3), base.Position + Vector3.new(0, 1.62, -6.8), accent)
     generatedPlatforms[1] = {Part = base, Layer = 0, Lane = 0, TopY = base.Position.Y + base.Size.Y / 2}
 
-    -- Platforms form a rotating, offset ring rather than a straight staircase.
-    -- Lane indices remain paired between layers; rotation and jitter are deliberately
-    -- small so every platform always has a safe, reachable successor.
+    -- Each lane is a wandering parkour route, not a vertical stack.
+    -- Every pad has a guaranteed reachable successor, while routes drift in
+    -- different directions and remain physically separated on each layer.
     local currentLayerY = 5
-    local layoutAngle = rotationAngle
+    local previousPositions = {}
+    for lane = 1, laneCount do
+        local angle = rotationAngle + math.pi * 2 * (lane - 1) / laneCount
+        local radius = rng:NextNumber(13.5, 16.0)
+        previousPositions[lane] = Vector2.new(math.cos(angle) * radius, math.sin(angle) * radius)
+    end
+
+    local platformPalette = {PALETTE.blue, PALETTE.purple, PALETTE.green, PALETTE.gold, PALETTE.cyan, PALETTE.pink}
     for layer = 1, layerCount do
-        currentLayerY += rng:NextNumber(3.45, 4.15)
+        currentLayerY += rng:NextNumber(3.35, 3.95)
         local y = currentLayerY
-        layoutAngle += rng:NextNumber(-0.22, 0.22)
-        local layerAngle = layoutAngle
-        local radius = (laneCount == 3 and 6.3 or 7.15) + rng:NextNumber(-0.25, 0.25)
+        local layerPositions = {}
 
         for lane = 1, laneCount do
-            local angle = layerAngle + (math.pi * 2 * (lane - 1) / laneCount)
-            local x = math.cos(angle) * radius + rng:NextNumber(-0.35, 0.35)
-            local z = math.sin(angle) * radius + rng:NextNumber(-0.35, 0.35)
-            local sizeX = platformWidth + rng:NextNumber(-0.25, 0.25)
-            local sizeZ = platformWidth + rng:NextNumber(-0.25, 0.25)
+            local previous = previousPositions[lane]
+            local chosen = nil
+            local bestCandidate = nil
+
+            -- Try many directions around the previous pad. The minimum spacing
+            -- prevents same-layer platforms from merging into one broad staircase.
+            for attempt = 1, 64 do
+                local angle = rng:NextNumber(0, math.pi * 2)
+                local distance = rng:NextNumber(9.5, 13.0)
+                local candidate = previous + Vector2.new(math.cos(angle), math.sin(angle)) * distance
+                local separated = true
+                for _, other in ipairs(layerPositions) do
+                    if (candidate - other).Magnitude < 11.5 then
+                        separated = false
+                        break
+                    end
+                end
+                if separated then
+                    chosen = candidate
+                    break
+                end
+                if not bestCandidate then bestCandidate = candidate end
+            end
+
+            -- Rare crowded-layout fallback: retain a safe, non-overlapping
+            -- offset rather than generating an impossible jump.
+            if not chosen then
+                local angle = rng:NextNumber(0, math.pi * 2)
+                chosen = previous + Vector2.new(math.cos(angle), math.sin(angle)) * 9.5
+                for attempt = 1, 24 do
+                    local separated = true
+                    for _, other in ipairs(layerPositions) do
+                        if (chosen - other).Magnitude < 10.5 then
+                            separated = false
+                            break
+                        end
+                    end
+                    if separated then break end
+                    angle += math.pi / 12
+                    chosen = previous + Vector2.new(math.cos(angle), math.sin(angle)) * 9.5
+                end
+            end
+
+            layerPositions[lane] = chosen
+            local sizeX = rng:NextNumber(6.8, 8.0)
+            local sizeZ = rng:NextNumber(6.8, 8.0)
+            local yaw = rng:NextNumber(-0.55, 0.55)
+            local position = center + Vector3.new(chosen.X, y, chosen.Y)
             local platform = makePart(
                 arenaFolder,
                 string.format("Platform_L%d_%d", layer, lane),
                 Vector3.new(sizeX, 2.5, sizeZ),
-                center + Vector3.new(x, y, z),
-                ({PALETTE.blue, PALETTE.purple, PALETTE.green, PALETTE.gold, PALETTE.cyan, PALETTE.pink})[((layer * 3 + lane * 2 - 1) % 6) + 1],
+                position,
+                platformPalette[((layer * 3 + lane * 2 - 1) % #platformPalette) + 1],
                 Enum.Material.SmoothPlastic
             )
+            platform.CFrame = CFrame.new(position) * CFrame.Angles(0, yaw, 0)
             platform.TopSurface = Enum.SurfaceType.Smooth
-            addNeonTrim(arenaFolder, "PlatformEdgeA_L" .. layer .. "_" .. lane,
-                Vector3.new(sizeX + 0.2, 0.2, 0.22),
-                platform.Position + Vector3.new(0, -1.12, -sizeZ / 2), accent)
-            addNeonTrim(arenaFolder, "PlatformEdgeB_L" .. layer .. "_" .. lane,
-                Vector3.new(0.22, 0.2, sizeZ + 0.2),
-                platform.Position + Vector3.new(-sizeX / 2, -1.12, 0), accent)
 
-            local record = {
+            local edgeA = addNeonTrim(arenaFolder, "PlatformEdgeA_L" .. layer .. "_" .. lane,
+                Vector3.new(sizeX + 0.2, 0.2, 0.22),
+                platform.CFrame:PointToWorldSpace(Vector3.new(0, -1.12, -sizeZ / 2)), accent)
+            edgeA.CFrame = platform.CFrame * CFrame.new(0, -1.12, -sizeZ / 2)
+            edgeA.Size = Vector3.new(sizeX + 0.2, 0.2, 0.22)
+            local edgeB = addNeonTrim(arenaFolder, "PlatformEdgeB_L" .. layer .. "_" .. lane,
+                Vector3.new(0.22, 0.2, sizeZ + 0.2),
+                platform.CFrame:PointToWorldSpace(Vector3.new(-sizeX / 2, -1.12, 0)), accent)
+            edgeB.CFrame = platform.CFrame * CFrame.new(-sizeX / 2, -1.12, 0)
+
+            generatedPlatforms[#generatedPlatforms + 1] = {
                 Part = platform,
                 Layer = layer,
                 Lane = lane,
                 TopY = platform.Position.Y + platform.Size.Y / 2,
             }
-            generatedPlatforms[#generatedPlatforms + 1] = record
         end
+        previousPositions = layerPositions
     end
 
     -- Randomized perimeter structures make each generated sector look different without heavy assets.
