@@ -3,6 +3,9 @@ local Config = {}
 -- Monetization
 Config.VIP_GAME_PASS_ID = 2087837274
 
+-- Audio: set this to the uploaded Roblox audio asset ID.
+Config.MUSIC_ASSET_ID = 0
+
 -- Match flow
 Config.MIN_PLAYERS = 1
 Config.SOLO_BOT_COUNT = 2
