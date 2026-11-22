@@ -447,10 +447,12 @@ local function buildArena()
     -- Lane indices remain paired between layers; rotation and jitter are deliberately
     -- small so every platform always has a safe, reachable successor.
     local currentLayerY = 5
+    local layoutAngle = rotationAngle
     for layer = 1, layerCount do
         currentLayerY += rng:NextNumber(3.45, 4.15)
         local y = currentLayerY
-        local layerAngle = rotationAngle + (layer - 1) * rng:NextNumber(-0.22, 0.22)
+        layoutAngle += rng:NextNumber(-0.22, 0.22)
+        local layerAngle = layoutAngle
         local radius = (laneCount == 3 and 6.3 or 7.15) + rng:NextNumber(-0.25, 0.25)
 
         for lane = 1, laneCount do
