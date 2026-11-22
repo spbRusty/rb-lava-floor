@@ -4,6 +4,7 @@ local DataStoreService = game:GetService("DataStoreService")
 local MarketplaceService = game:GetService("MarketplaceService")
 local Lighting = game:GetService("Lighting")
 local TweenService = game:GetService("TweenService")
+local Debris = game:GetService("Debris")
 
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 
@@ -419,12 +420,10 @@ local function buildArena()
 
     local rng = Random.new()
     local laneCount = rng:NextInteger(3, 4)
-    local laneSpacing = rng:NextNumber(9.8, 10.4)
-    local platformWidth = rng:NextNumber(8.4, 9.0)
-    local verticalStep = rng:NextNumber(3.6, 4.0)
+    local platformWidth = rng:NextNumber(8.2, 8.8)
     local layerCount = rng:NextInteger(6, 7)
     local sectorNumber = rng:NextInteger(1000, 9999)
-    local signature = table.concat({laneCount, math.floor(laneSpacing * 10), math.floor(platformWidth * 10), math.floor(verticalStep * 10), layerCount, sectorNumber}, "-")
+    local signature = table.concat({laneCount, math.floor(platformWidth * 10), layerCount, sectorNumber}, "-")
     while signature == lastLayoutSignature do
         sectorNumber = rng:NextInteger(1000, 9999)
         signature = signature .. "-" .. tostring(sectorNumber)
@@ -436,8 +435,6 @@ local function buildArena()
     local accentChoices = {PALETTE.orange, PALETTE.cyan, PALETTE.gold, PALETTE.green, PALETTE.purple, PALETTE.pink}
     local accent = accentChoices[rng:NextInteger(1, #accentChoices)]
     local rotationAngle = rng:NextNumber(0, math.pi * 2)
-    local rotationCos = math.cos(rotationAngle)
-    local rotationSin = math.sin(rotationAngle)
 
     makePart(arenaFolder, "ArenaFoundation", Vector3.new(180, 5, 180), center + Vector3.new(0, -20, 0), Color3.fromRGB(55, 74, 120), Enum.Material.Slate)
     addNeonTrim(arenaFolder, "FoundationRing", Vector3.new(182, 0.5, 182), center + Vector3.new(0, -17.2, 0), accent)
@@ -446,20 +443,22 @@ local function buildArena()
     addNeonTrim(arenaFolder, "StartPlatformGlow", Vector3.new(14.2, 0.25, 0.3), base.Position + Vector3.new(0, 1.62, -6.8), accent)
     generatedPlatforms[1] = {Part = base, Layer = 0, Lane = 0, TopY = base.Position.Y + base.Size.Y / 2}
 
-    -- Every platform in a layer has at least two reachable choices in the next layer.
-    -- Adjacent lanes are close enough for a normal Roblox jump with a modest jump-power boost.
-    local previousDepth = 2.5
+    -- Platforms form a rotating, offset ring rather than a straight staircase.
+    -- Lane indices remain paired between layers; rotation and jitter are deliberately
+    -- small so every platform always has a safe, reachable successor.
+    local currentLayerY = 5
     for layer = 1, layerCount do
-        local depth = previousDepth + rng:NextNumber(9.8, 10.4)
-        previousDepth = depth
-        local y = 5 + layer * verticalStep
-        local layerPlatforms = {}
+        currentLayerY += rng:NextNumber(3.45, 4.15)
+        local y = currentLayerY
+        local layerAngle = rotationAngle + (layer - 1) * rng:NextNumber(-0.22, 0.22)
+        local radius = (laneCount == 3 and 6.3 or 7.15) + rng:NextNumber(-0.25, 0.25)
 
         for lane = 1, laneCount do
-            local x = (lane - (laneCount + 1) / 2) * laneSpacing + rng:NextNumber(-0.15, 0.15)
-            local z = depth + rng:NextNumber(-0.2, 0.2)
-            local sizeX = platformWidth + rng:NextNumber(-0.5, 0.5)
-            local sizeZ = platformWidth + rng:NextNumber(-0.5, 0.5)
+            local angle = layerAngle + (math.pi * 2 * (lane - 1) / laneCount)
+            local x = math.cos(angle) * radius + rng:NextNumber(-0.35, 0.35)
+            local z = math.sin(angle) * radius + rng:NextNumber(-0.35, 0.35)
+            local sizeX = platformWidth + rng:NextNumber(-0.25, 0.25)
+            local sizeZ = platformWidth + rng:NextNumber(-0.25, 0.25)
             local platform = makePart(
                 arenaFolder,
                 string.format("Platform_L%d_%d", layer, lane),
@@ -570,6 +569,87 @@ local function buildArena()
     })
     sparks.Parent = lava
 
+    local spit = Instance.new("ParticleEmitter")
+    spit.Name = "MoltenSpit"
+    spit.Texture = "rbxasset://textures/particles/fire_main.dds"
+    spit.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 245, 120)),
+        ColorSequenceKeypoint.new(0.45, Color3.fromRGB(255, 116, 24)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(190, 28, 12)),
+    })
+    spit.LightEmission = 1
+    spit.Rate = 4
+    spit.Lifetime = NumberRange.new(0.35, 0.85)
+    spit.Speed = NumberRange.new(9, 17)
+    spit.SpreadAngle = Vector2.new(180, 180)
+    spit.Acceleration = Vector3.new(0, -16, 0)
+    spit.Size = NumberSequence.new({
+        NumberSequenceKeypoint.new(0, 0.7),
+        NumberSequenceKeypoint.new(0.35, 0.45),
+        NumberSequenceKeypoint.new(1, 0),
+    })
+    spit.Parent = lava
+
+    -- Slow, irregular bubbles break the flat neon surface into a living molten pool.
+    task.spawn(function()
+        local bubbleRng = Random.new()
+        while lava.Parent do
+            local bubble = Instance.new("Part")
+            bubble.Name = "LavaBubble"
+            bubble.Shape = Enum.PartType.Ball
+            bubble.Anchored = true
+            bubble.CanCollide = false
+            bubble.CanTouch = false
+            bubble.CanQuery = false
+            bubble.CastShadow = false
+            bubble.Material = Enum.Material.Neon
+            bubble.Color = bubbleRng:NextNumber() > 0.5 and Color3.fromRGB(255, 191, 45) or Color3.fromRGB(255, 76, 20)
+            local diameter = bubbleRng:NextNumber(1.1, 2.4)
+            bubble.Size = Vector3.new(diameter, diameter * 0.45, diameter)
+            bubble.Position = lava.Position + Vector3.new(
+                bubbleRng:NextNumber(-82, 82), 1.45, bubbleRng:NextNumber(-82, 82)
+            )
+            bubble.Parent = arenaFolder
+            local rise = TweenService:Create(bubble, TweenInfo.new(bubbleRng:NextNumber(0.45, 0.9), Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                Position = bubble.Position + Vector3.new(0, bubbleRng:NextNumber(1.2, 2.8), 0),
+                Size = bubble.Size * bubbleRng:NextNumber(1.35, 1.8),
+                Transparency = 1,
+            })
+            rise:Play()
+            Debris:AddItem(bubble, 1.1)
+            task.wait(bubbleRng:NextNumber(0.22, 0.48))
+        end
+    end)
+
+    -- Occasional physical fire clots arc out of the pool and quickly burn away.
+    task.spawn(function()
+        local spitRng = Random.new()
+        while lava.Parent do
+            task.wait(spitRng:NextNumber(2.8, 4.6))
+            if not lava.Parent then break end
+            local chunk = Instance.new("Part")
+            chunk.Name = "LavaSpitChunk"
+            chunk.Shape = Enum.PartType.Ball
+            chunk.Size = Vector3.new(spitRng:NextNumber(0.8, 1.5), spitRng:NextNumber(0.8, 1.5), spitRng:NextNumber(0.8, 1.5))
+            chunk.Material = Enum.Material.Neon
+            chunk.Color = spitRng:NextNumber() > 0.5 and Color3.fromRGB(255, 211, 65) or Color3.fromRGB(255, 75, 22)
+            chunk.Anchored = false
+            chunk.CanCollide = false
+            chunk.CanTouch = false
+            chunk.CanQuery = false
+            chunk.CastShadow = false
+            chunk.Position = lava.Position + Vector3.new(spitRng:NextNumber(-70, 70), 2.5, spitRng:NextNumber(-70, 70))
+            chunk.Parent = arenaFolder
+            chunk.AssemblyLinearVelocity = Vector3.new(spitRng:NextNumber(-16, 16), spitRng:NextNumber(18, 30), spitRng:NextNumber(-16, 16))
+            chunk.AssemblyAngularVelocity = Vector3.new(spitRng:NextNumber(-8, 8), spitRng:NextNumber(-8, 8), spitRng:NextNumber(-8, 8))
+            local fire = Instance.new("Fire")
+            fire.Size = 3
+            fire.Heat = 5
+            fire.Parent = chunk
+            Debris:AddItem(chunk, 2.4)
+        end
+    end)
+
     local touched = {}
     lava.Touched:Connect(function(hit)
         local character = hit:FindFirstAncestorOfClass("Model")
@@ -616,6 +696,37 @@ local function createBot(index, spawnPosition)
     local rightLeg = makeBodyPart("Right Leg", Vector3.new(1, 2, 1), Color3.fromRGB(42, 48, 62), spawnPosition + Vector3.new(0.5, -2, 0))
     leftLeg.CanCollide = true
     rightLeg.CanCollide = true
+
+    -- Original low-part-count accessories keep bots readable without external assets.
+    local function addBotArmor(name, size, offset, color, material, shape)
+        local armor = Instance.new("Part")
+        armor.Name = name
+        armor.Size = size
+        armor.Shape = shape or Enum.PartType.Block
+        armor.Color = color
+        armor.Material = material or Enum.Material.SmoothPlastic
+        armor.CanCollide = false
+        armor.CanTouch = false
+        armor.CanQuery = false
+        armor.Massless = true
+        armor.Anchored = false
+        armor.CFrame = root.CFrame * CFrame.new(offset)
+        armor.Parent = model
+        local weld = Instance.new("WeldConstraint")
+        weld.Part0 = root
+        weld.Part1 = armor
+        weld.Parent = armor
+        return armor
+    end
+
+    local trimColor = index % 2 == 0 and Color3.fromRGB(65, 235, 255) or Color3.fromRGB(255, 190, 55)
+    addBotArmor("ChestArmor", Vector3.new(1.55, 1.15, 0.18), Vector3.new(0, 0.05, -0.58), trimColor, Enum.Material.Metal)
+    addBotArmor("Helmet", Vector3.new(1.85, 0.72, 1.25), Vector3.new(0, 2.08, 0), bodyColor, Enum.Material.Metal, Enum.PartType.Ball)
+    addBotArmor("Visor", Vector3.new(1.35, 0.32, 0.16), Vector3.new(0, 1.88, -0.61), Color3.fromRGB(24, 34, 52), Enum.Material.Neon)
+    addBotArmor("LeftShoulder", Vector3.new(0.72, 0.72, 0.82), Vector3.new(-1.35, 0.72, 0), trimColor, Enum.Material.Metal, Enum.PartType.Ball)
+    addBotArmor("RightShoulder", Vector3.new(0.72, 0.72, 0.82), Vector3.new(1.35, 0.72, 0), trimColor, Enum.Material.Metal, Enum.PartType.Ball)
+    addBotArmor("Jetpack", Vector3.new(1.25, 1.25, 0.55), Vector3.new(0, 0.15, 0.82), Color3.fromRGB(45, 55, 76), Enum.Material.Metal)
+    addBotArmor("JetpackCore", Vector3.new(0.55, 0.7, 0.18), Vector3.new(0, 0.15, 1.13), trimColor, Enum.Material.Neon)
 
     local function connect(name, part0, part1, c0, c1)
         local joint = Instance.new("Motor6D")
