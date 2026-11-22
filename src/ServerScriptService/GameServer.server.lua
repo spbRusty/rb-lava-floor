@@ -485,22 +485,23 @@ local function buildArena()
                 if not bestCandidate then bestCandidate = candidate end
             end
 
-            -- Rare crowded-layout fallback: retain a safe, non-overlapping
-            -- offset rather than generating an impossible jump.
+            -- Crowded-layout fallback: search many legal jump vectors and keep
+            -- the one with the greatest clearance from already placed pads.
             if not chosen then
-                local angle = rng:NextNumber(0, math.pi * 2)
-                chosen = previous + Vector2.new(math.cos(angle), math.sin(angle)) * 9.5
-                for attempt = 1, 24 do
-                    local separated = true
+                local bestClearance = -math.huge
+                for attempt = 1, 128 do
+                    local angle = rng:NextNumber(0, math.pi * 2)
+                    local distance = rng:NextNumber(9.5, 13.0)
+                    local candidate = previous + Vector2.new(math.cos(angle), math.sin(angle)) * distance
+                    local clearance = math.huge
                     for _, other in ipairs(layerPositions) do
-                        if (chosen - other).Magnitude < 10.5 then
-                            separated = false
-                            break
-                        end
+                        clearance = math.min(clearance, (candidate - other).Magnitude)
                     end
-                    if separated then break end
-                    angle += math.pi / 12
-                    chosen = previous + Vector2.new(math.cos(angle), math.sin(angle)) * 9.5
+                    if clearance > bestClearance then
+                        bestClearance = clearance
+                        chosen = candidate
+                    end
+                    if clearance >= 11.5 then break end
                 end
             end
 
