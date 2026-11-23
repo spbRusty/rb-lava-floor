@@ -420,10 +420,9 @@ local function buildArena()
 
     local rng = Random.new()
     local laneCount = rng:NextInteger(3, 4)
-    local platformWidth = rng:NextNumber(8.2, 8.8)
     local layerCount = rng:NextInteger(6, 7)
     local sectorNumber = rng:NextInteger(1000, 9999)
-    local signature = table.concat({laneCount, math.floor(platformWidth * 10), layerCount, sectorNumber}, "-")
+    local signature = table.concat({laneCount, layerCount, sectorNumber}, "-")
     while signature == lastLayoutSignature do
         sectorNumber = rng:NextInteger(1000, 9999)
         signature = signature .. "-" .. tostring(sectorNumber)
@@ -528,7 +527,7 @@ local function buildArena()
         previousLayerRecords = layerRecords
     end
 
-    -- Check the first jumps from the 14-stud starting platform as well.
+    -- Check the first jumps from the 18-stud starting platform as well.
     for _, firstPad in ipairs(firstLayerRecords or {}) do
         local delta = firstPad.Part.Position - base.Position
         local horizontal = Vector3.new(delta.X, 0, delta.Z).Magnitude
