@@ -439,16 +439,15 @@ local function buildArena()
     makePart(arenaFolder, "ArenaFoundation", Vector3.new(180, 5, 180), center + Vector3.new(0, -20, 0), Color3.fromRGB(55, 74, 120), Enum.Material.Slate)
     addNeonTrim(arenaFolder, "FoundationRing", Vector3.new(182, 0.5, 182), center + Vector3.new(0, -17.2, 0), accent)
 
-    local base = makePart(arenaFolder, "StartPlatform", Vector3.new(14, 3, 14), center + Vector3.new(0, 5, 0), PALETTE.green, Enum.Material.SmoothPlastic)
-    addNeonTrim(arenaFolder, "StartPlatformGlow", Vector3.new(14.2, 0.25, 0.3), base.Position + Vector3.new(0, 1.62, -6.8), accent)
+    local base = makePart(arenaFolder, "StartPlatform", Vector3.new(18, 3, 18), center + Vector3.new(0, 5, 0), PALETTE.green, Enum.Material.SmoothPlastic)
+    addNeonTrim(arenaFolder, "StartPlatformGlow", Vector3.new(18.2, 0.25, 0.3), base.Position + Vector3.new(0, 1.62, -8.8), accent)
     generatedPlatforms[1] = {Part = base, Layer = 0, Lane = 0, TopY = base.Position.Y + base.Size.Y / 2}
 
     -- Layers are compact, offset formations. Each pad on one layer has
     -- multiple short, physically reachable jumps to the next layer.
     local currentLayerY = 5
     local platformPalette = {PALETTE.blue, PALETTE.purple, PALETTE.green, PALETTE.gold, PALETTE.cyan, PALETTE.pink}
-    local formationRadius = laneCount == 3 and 6.2 or 6.8
-    local formationCenter = Vector2.new(math.cos(rotationAngle), math.sin(rotationAngle)) * 9.5
+    local formationCenter = Vector2.new(math.cos(rotationAngle), math.sin(rotationAngle)) * 12.5
     local formationPhase = rotationAngle
     local previousLayerRecords = {generatedPlatforms[1]}
     local firstLayerRecords = nil
@@ -461,15 +460,16 @@ local function buildArena()
             local driftAngle = rng:NextNumber(0, math.pi * 2)
             local driftDistance = rng:NextNumber(1.2, 2.0)
             formationCenter += Vector2.new(math.cos(driftAngle), math.sin(driftAngle)) * driftDistance
-            formationPhase += rng:NextNumber(-0.06, 0.06)
-            formationRadius += rng:NextNumber(-0.12, 0.12)
+            formationPhase += rng:NextNumber(-0.08, 0.08)
         end
 
+        local forward = Vector2.new(math.cos(formationPhase), math.sin(formationPhase))
+        local right = Vector2.new(-forward.Y, forward.X)
         local layerRecords = {}
         for lane = 1, laneCount do
-            local angle = formationPhase + math.pi * 2 * (lane - 1) / laneCount
-            local jitter = Vector2.new(rng:NextNumber(-0.15, 0.15), rng:NextNumber(-0.15, 0.15))
-            local point = formationCenter + Vector2.new(math.cos(angle), math.sin(angle)) * formationRadius + jitter
+            local laneOffset = (lane - (laneCount + 1) / 2) * 8.5
+            local stagger = (lane % 2 == 0 and 0.85 or -0.85) + rng:NextNumber(-0.15, 0.15)
+            local point = formationCenter + right * laneOffset + forward * stagger
             local sizeX = rng:NextNumber(6.2, 6.8)
             local sizeZ = rng:NextNumber(6.2, 6.8)
             local yaw = rng:NextNumber(-0.28, 0.28)
