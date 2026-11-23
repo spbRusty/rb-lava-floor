@@ -803,7 +803,7 @@ local function createBot(index, spawnPosition)
     humanoid.NameDisplayDistance = 45
     humanoid.WalkSpeed = 16
     humanoid.UseJumpPower = true
-    humanoid.JumpPower = Config.PLAYER_JUMP_POWER
+    humanoid.JumpPower = Config.PLAYER_JUMP_POWER + 3
     humanoid.MaxHealth = 100
     humanoid.Health = 100
     humanoid.Parent = model
