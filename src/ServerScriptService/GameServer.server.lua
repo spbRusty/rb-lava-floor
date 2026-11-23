@@ -438,15 +438,15 @@ local function buildArena()
     makePart(arenaFolder, "ArenaFoundation", Vector3.new(180, 5, 180), center + Vector3.new(0, -20, 0), Color3.fromRGB(55, 74, 120), Enum.Material.Slate)
     addNeonTrim(arenaFolder, "FoundationRing", Vector3.new(182, 0.5, 182), center + Vector3.new(0, -17.2, 0), accent)
 
-    local base = makePart(arenaFolder, "StartPlatform", Vector3.new(18, 3, 18), center + Vector3.new(0, 5, 0), PALETTE.green, Enum.Material.SmoothPlastic)
-    addNeonTrim(arenaFolder, "StartPlatformGlow", Vector3.new(18.2, 0.25, 0.3), base.Position + Vector3.new(0, 1.62, -8.8), accent)
+    local base = makePart(arenaFolder, "StartPlatform", Vector3.new(19.5, 3, 19.5), center + Vector3.new(0, 5, 0), PALETTE.green, Enum.Material.SmoothPlastic)
+    addNeonTrim(arenaFolder, "StartPlatformGlow", Vector3.new(19.7, 0.25, 0.3), base.Position + Vector3.new(0, 1.62, -9.55), accent)
     generatedPlatforms[1] = {Part = base, Layer = 0, Lane = 0, TopY = base.Position.Y + base.Size.Y / 2}
 
     -- Layers are compact, offset formations. Each pad on one layer has
     -- multiple short, physically reachable jumps to the next layer.
     local currentLayerY = 5
     local platformPalette = {PALETTE.blue, PALETTE.purple, PALETTE.green, PALETTE.gold, PALETTE.cyan, PALETTE.pink}
-    local formationCenter = Vector2.new(math.cos(rotationAngle), math.sin(rotationAngle)) * 12.5
+    local formationCenter = Vector2.new(math.cos(rotationAngle), math.sin(rotationAngle)) * 13.3
     local formationPhase = rotationAngle
     local previousLayerRecords = {generatedPlatforms[1]}
     local firstLayerRecords = nil
@@ -801,7 +801,7 @@ local function createBot(index, spawnPosition)
     local humanoid = Instance.new("Humanoid")
     humanoid.DisplayName = "BOT " .. index
     humanoid.NameDisplayDistance = 45
-    humanoid.WalkSpeed = 14 + (index % 2)
+    humanoid.WalkSpeed = 16
     humanoid.UseJumpPower = true
     humanoid.JumpPower = Config.PLAYER_JUMP_POWER
     humanoid.MaxHealth = 100
@@ -919,9 +919,9 @@ local function runBotAI(bot)
             end
 
             local direction = flatOffset.Unit
-            local launchPoint = edgePoint(currentRecord.Part, direction, 1.15)
+            local launchPoint = edgePoint(currentRecord.Part, direction, 0.3)
             local launchPosition = Vector3.new(launchPoint.X, currentRecord.TopY + 3, launchPoint.Z)
-            local landingPoint = edgePoint(target.Part, -direction, 1.15)
+            local landingPoint = edgePoint(target.Part, -direction, 0.3)
             local landingPosition = Vector3.new(landingPoint.X, target.TopY + 3, landingPoint.Z)
 
             humanoid:MoveTo(launchPosition)
@@ -929,7 +929,7 @@ local function runBotAI(bot)
             local reachedLaunch = false
             while os.clock() < approachDeadline and humanoid.Health > 0 and alive[bot] do
                 local delta = Vector3.new(root.Position.X - launchPosition.X, 0, root.Position.Z - launchPosition.Z)
-                if delta.Magnitude <= 1.35 then
+                if delta.Magnitude <= 0.55 then
                     reachedLaunch = true
                     break
                 end
