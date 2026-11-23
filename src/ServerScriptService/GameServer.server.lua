@@ -457,17 +457,17 @@ local function buildArena()
 
         if layer > 1 then
             local driftAngle = rng:NextNumber(0, math.pi * 2)
-            local driftDistance = rng:NextNumber(1.2, 2.0)
+            local driftDistance = rng:NextNumber(1.2, 1.6)
             formationCenter += Vector2.new(math.cos(driftAngle), math.sin(driftAngle)) * driftDistance
-            formationPhase += rng:NextNumber(-0.08, 0.08)
+            formationPhase += rng:NextNumber(-0.05, 0.05)
         end
 
         local forward = Vector2.new(math.cos(formationPhase), math.sin(formationPhase))
         local right = Vector2.new(-forward.Y, forward.X)
         local layerRecords = {}
         for lane = 1, laneCount do
-            local laneOffset = (lane - (laneCount + 1) / 2) * 8.5
-            local stagger = (lane % 2 == 0 and 0.85 or -0.85) + rng:NextNumber(-0.15, 0.15)
+            local laneOffset = (lane - (laneCount + 1) / 2) * 9.2
+            local stagger = (lane % 2 == 0 and 0.55 or -0.55) + rng:NextNumber(-0.1, 0.1)
             local point = formationCenter + right * laneOffset + forward * stagger
             local sizeX = rng:NextNumber(6.2, 6.8)
             local sizeZ = rng:NextNumber(6.2, 6.8)
