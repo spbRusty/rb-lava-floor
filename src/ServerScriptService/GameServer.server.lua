@@ -443,77 +443,40 @@ local function buildArena()
     addNeonTrim(arenaFolder, "StartPlatformGlow", Vector3.new(14.2, 0.25, 0.3), base.Position + Vector3.new(0, 1.62, -6.8), accent)
     generatedPlatforms[1] = {Part = base, Layer = 0, Lane = 0, TopY = base.Position.Y + base.Size.Y / 2}
 
-    -- Each lane is a wandering parkour route, not a vertical stack.
-    -- Every pad has a guaranteed reachable successor, while routes drift in
-    -- different directions and remain physically separated on each layer.
+    -- Layers are compact, offset formations. Each pad on one layer has
+    -- multiple short, physically reachable jumps to the next layer.
     local currentLayerY = 5
-    local previousPositions = {}
-    for lane = 1, laneCount do
-        local angle = rotationAngle + math.pi * 2 * (lane - 1) / laneCount
-        local radius = rng:NextNumber(13.5, 16.0)
-        previousPositions[lane] = Vector2.new(math.cos(angle) * radius, math.sin(angle) * radius)
-    end
-
     local platformPalette = {PALETTE.blue, PALETTE.purple, PALETTE.green, PALETTE.gold, PALETTE.cyan, PALETTE.pink}
+    local formationRadius = laneCount == 3 and 6.2 or 6.8
+    local formationCenter = Vector2.new(math.cos(rotationAngle), math.sin(rotationAngle)) * 9.5
+    local formationPhase = rotationAngle
+    local previousLayerRecords = {generatedPlatforms[1]}
+
     for layer = 1, layerCount do
-        currentLayerY += rng:NextNumber(3.35, 3.95)
+        currentLayerY += rng:NextNumber(3.9, 4.2)
         local y = currentLayerY
-        local layerPositions = {}
 
+        if layer > 1 then
+            local driftAngle = rng:NextNumber(0, math.pi * 2)
+            local driftDistance = rng:NextNumber(1.2, 2.0)
+            formationCenter += Vector2.new(math.cos(driftAngle), math.sin(driftAngle)) * driftDistance
+            formationPhase += rng:NextNumber(-0.06, 0.06)
+            formationRadius += rng:NextNumber(-0.12, 0.12)
+        end
+
+        local layerRecords = {}
         for lane = 1, laneCount do
-            local previous = previousPositions[lane]
-            local chosen = nil
-            local bestCandidate = nil
-
-            -- Try many directions around the previous pad. The minimum spacing
-            -- prevents same-layer platforms from merging into one broad staircase.
-            for attempt = 1, 64 do
-                local angle = rng:NextNumber(0, math.pi * 2)
-                local distance = rng:NextNumber(9.5, 13.0)
-                local candidate = previous + Vector2.new(math.cos(angle), math.sin(angle)) * distance
-                local separated = true
-                for _, other in ipairs(layerPositions) do
-                    if (candidate - other).Magnitude < 11.5 then
-                        separated = false
-                        break
-                    end
-                end
-                if separated then
-                    chosen = candidate
-                    break
-                end
-                if not bestCandidate then bestCandidate = candidate end
-            end
-
-            -- Crowded-layout fallback: search many legal jump vectors and keep
-            -- the one with the greatest clearance from already placed pads.
-            if not chosen then
-                local bestClearance = -math.huge
-                for attempt = 1, 128 do
-                    local angle = rng:NextNumber(0, math.pi * 2)
-                    local distance = rng:NextNumber(9.5, 13.0)
-                    local candidate = previous + Vector2.new(math.cos(angle), math.sin(angle)) * distance
-                    local clearance = math.huge
-                    for _, other in ipairs(layerPositions) do
-                        clearance = math.min(clearance, (candidate - other).Magnitude)
-                    end
-                    if clearance > bestClearance then
-                        bestClearance = clearance
-                        chosen = candidate
-                    end
-                    if clearance >= 11.5 then break end
-                end
-            end
-
-            layerPositions[lane] = chosen
-            local sizeX = rng:NextNumber(6.8, 8.0)
-            local sizeZ = rng:NextNumber(6.8, 8.0)
-            local yaw = rng:NextNumber(-0.55, 0.55)
-            local position = center + Vector3.new(chosen.X, y, chosen.Y)
+            local angle = formationPhase + math.pi * 2 * (lane - 1) / laneCount
+            local jitter = Vector2.new(rng:NextNumber(-0.15, 0.15), rng:NextNumber(-0.15, 0.15))
+            local point = formationCenter + Vector2.new(math.cos(angle), math.sin(angle)) * formationRadius + jitter
+            local sizeX = rng:NextNumber(6.2, 6.8)
+            local sizeZ = rng:NextNumber(6.2, 6.8)
+            local yaw = rng:NextNumber(-0.28, 0.28)
+            local position = center + Vector3.new(point.X, y, point.Y)
             local platform = makePart(
                 arenaFolder,
                 string.format("Platform_L%d_%d", layer, lane),
-                Vector3.new(sizeX, 2.5, sizeZ),
+                Vector3.new(sizeX, 2.2, sizeZ),
                 position,
                 platformPalette[((layer * 3 + lane * 2 - 1) % #platformPalette) + 1],
                 Enum.Material.SmoothPlastic
@@ -523,22 +486,49 @@ local function buildArena()
 
             local edgeA = addNeonTrim(arenaFolder, "PlatformEdgeA_L" .. layer .. "_" .. lane,
                 Vector3.new(sizeX + 0.2, 0.2, 0.22),
-                platform.CFrame:PointToWorldSpace(Vector3.new(0, -1.12, -sizeZ / 2)), accent)
-            edgeA.CFrame = platform.CFrame * CFrame.new(0, -1.12, -sizeZ / 2)
+                platform.CFrame:PointToWorldSpace(Vector3.new(0, -1.02, -sizeZ / 2)), accent)
+            edgeA.CFrame = platform.CFrame * CFrame.new(0, -1.02, -sizeZ / 2)
             edgeA.Size = Vector3.new(sizeX + 0.2, 0.2, 0.22)
             local edgeB = addNeonTrim(arenaFolder, "PlatformEdgeB_L" .. layer .. "_" .. lane,
                 Vector3.new(0.22, 0.2, sizeZ + 0.2),
-                platform.CFrame:PointToWorldSpace(Vector3.new(-sizeX / 2, -1.12, 0)), accent)
-            edgeB.CFrame = platform.CFrame * CFrame.new(-sizeX / 2, -1.12, 0)
+                platform.CFrame:PointToWorldSpace(Vector3.new(-sizeX / 2, -1.02, 0)), accent)
+            edgeB.CFrame = platform.CFrame * CFrame.new(-sizeX / 2, -1.02, 0)
 
-            generatedPlatforms[#generatedPlatforms + 1] = {
+            local record = {
                 Part = platform,
                 Layer = layer,
                 Lane = lane,
                 TopY = platform.Position.Y + platform.Size.Y / 2,
             }
+            table.insert(layerRecords, record)
+            table.insert(generatedPlatforms, record)
         end
-        previousPositions = layerPositions
+
+        -- Verify the generated route graph. The bounded formation geometry
+        -- should give every non-final pad at least two next-layer choices.
+        if layer > 1 then
+            for _, previous in ipairs(previousLayerRecords) do
+                local reachable = 0
+                for _, candidate in ipairs(layerRecords) do
+                    local delta = candidate.Part.Position - previous.Part.Position
+                    local horizontal = Vector3.new(delta.X, 0, delta.Z).Magnitude
+                    if horizontal <= 13.5 then reachable += 1 end
+                end
+                if reachable < 2 then
+                    warn(string.format("[FloorIsLava] Route validation: layer %d lane %d has only %d successors", previous.Layer, previous.Lane, reachable))
+                end
+            end
+        end
+        previousLayerRecords = layerRecords
+    end
+
+    -- The starting platform must also connect to the first route layer.
+    for _, firstPad in ipairs(previousLayerRecords) do
+        local delta = firstPad.Part.Position - base.Position
+        local horizontal = Vector3.new(delta.X, 0, delta.Z).Magnitude
+        if horizontal > 16.5 then
+            warn(string.format("[FloorIsLava] Start jump is too long for lane %d: %.1f studs", firstPad.Lane, horizontal))
+        end
     end
 
     -- Randomized perimeter structures make each generated sector look different without heavy assets.
@@ -823,56 +813,60 @@ local function runBotAI(bot)
     task.spawn(function()
         local humanoid = bot.Humanoid
         local model = bot.Model
+        local root = model:WaitForChild("HumanoidRootPart")
+
+        -- Include only actual generated platforms. Decorative trims and sweepers
+        -- must never confuse the bot's grounded-platform detection.
+        local platformParts = {}
+        for _, record in ipairs(generatedPlatforms) do
+            table.insert(platformParts, record.Part)
+        end
         local rayParams = RaycastParams.new()
-        rayParams.FilterType = Enum.RaycastFilterType.Exclude
-        rayParams.FilterDescendantsInstances = {model}
+        rayParams.FilterType = Enum.RaycastFilterType.Include
+        rayParams.FilterDescendantsInstances = platformParts
         rayParams.IgnoreWater = true
 
-        local function platformBelow(root)
-            local result = workspace:Raycast(root.Position + Vector3.new(0, 1, 0), Vector3.new(0, -9, 0), rayParams)
-            if result then
-                for _, record in ipairs(generatedPlatforms) do
-                    if result.Instance == record.Part then
-                        return record
-                    end
-                end
-            end
-
-            -- Fallback for the brief frames when the humanoid is settling onto a platform.
-            local best, bestDistance = nil, math.huge
+        local function platformBelow()
+            local result = workspace:Raycast(
+                root.Position + Vector3.new(0, 1, 0),
+                Vector3.new(0, -10, 0),
+                rayParams
+            )
+            if not result then return nil end
             for _, record in ipairs(generatedPlatforms) do
-                local dx = root.Position.X - record.Part.Position.X
-                local dz = root.Position.Z - record.Part.Position.Z
-                local horizontal = math.sqrt(dx * dx + dz * dz)
-                local heightAbove = root.Position.Y - record.TopY
-                if horizontal <= math.min(record.Part.Size.X, record.Part.Size.Z) * 0.42
-                    and heightAbove >= 0.5 and heightAbove <= 6 then
-                    local score = horizontal + math.abs(heightAbove - 3) * 0.35
-                    if score < bestDistance then
-                        best, bestDistance = record, score
-                    end
-                end
+                if result.Instance == record.Part then return record end
             end
-            return best
+            return nil
         end
 
-        local function waitForLanding(root, target, timeout)
+        local function waitForLanding(target, timeout)
             local deadline = os.clock() + timeout
+            local stableFrames = 0
             while os.clock() < deadline and humanoid.Health > 0 and alive[bot] and model.Parent do
-                local landed = platformBelow(root)
-                if landed == target and humanoid.FloorMaterial ~= Enum.Material.Air then
-                    return true
+                if platformBelow() == target and humanoid.FloorMaterial ~= Enum.Material.Air then
+                    stableFrames += 1
+                    if stableFrames >= 2 then return true end
+                else
+                    stableFrames = 0
                 end
                 task.wait(0.08)
             end
             return false
         end
 
-        while roundActive and alive[bot] and model.Parent and humanoid.Health > 0 do
-            local root = model:FindFirstChild("HumanoidRootPart")
-            if not root then break end
+        local function edgePoint(part, direction, inset)
+            -- Work in the platform's local axes so rotated pads are handled correctly.
+            local localDirection = part.CFrame:VectorToObjectSpace(direction)
+            local halfX = math.max(0.5, part.Size.X * 0.5 - inset)
+            local halfZ = math.max(0.5, part.Size.Z * 0.5 - inset)
+            local alongX = math.abs(localDirection.X) > 0.001 and halfX / math.abs(localDirection.X) or math.huge
+            local alongZ = math.abs(localDirection.Z) > 0.001 and halfZ / math.abs(localDirection.Z) or math.huge
+            local distance = math.min(alongX, alongZ)
+            return part.Position + direction * math.max(0, distance)
+        end
 
-            local currentRecord = platformBelow(root)
+        while roundActive and alive[bot] and model.Parent and humanoid.Health > 0 do
+            local currentRecord = platformBelow()
             if not currentRecord then
                 task.wait(0.12)
                 continue
@@ -881,87 +875,85 @@ local function runBotAI(bot)
             local options = {}
             for _, record in ipairs(generatedPlatforms) do
                 if record.Layer == currentRecord.Layer + 1 then
-                    table.insert(options, record)
+                    local offset = record.Part.Position - currentRecord.Part.Position
+                    local horizontal = Vector3.new(offset.X, 0, offset.Z).Magnitude
+                    if horizontal <= 13.5 then
+                        table.insert(options, {Record = record, Distance = horizontal})
+                    end
                 end
             end
 
-            if #options > 0 then
-                -- Prefer the same lane: it is the shortest and most reliable jump.
-                table.sort(options, function(a, b)
-                    local aLane = math.abs(a.Lane - currentRecord.Lane)
-                    local bLane = math.abs(b.Lane - currentRecord.Lane)
-                    if aLane ~= bLane then return aLane < bLane end
-                    local aDistance = (a.Part.Position - currentRecord.Part.Position).Magnitude
-                    local bDistance = (b.Part.Position - currentRecord.Part.Position).Magnitude
-                    return aDistance < bDistance
-                end)
-                local target = options[1]
-                local offset = target.Part.Position - currentRecord.Part.Position
-                local flatOffset = Vector3.new(offset.X, 0, offset.Z)
-                if flatOffset.Magnitude < 0.01 then
-                    task.wait(0.15)
-                    continue
+            table.sort(options, function(a, b)
+                return a.Distance < b.Distance
+            end)
+
+            if #options == 0 then
+                task.wait(0.2)
+                continue
+            end
+
+            -- Choose the shortest verified next-layer jump. The generator
+            -- validates that each pad has at least two possible successors.
+            local target = options[1].Record
+            local offset = target.Part.Position - currentRecord.Part.Position
+            local flatOffset = Vector3.new(offset.X, 0, offset.Z)
+            if flatOffset.Magnitude < 0.01 then
+                task.wait(0.15)
+                continue
+            end
+
+            local direction = flatOffset.Unit
+            local launchPoint = edgePoint(currentRecord.Part, direction, 1.15)
+            local launchPosition = Vector3.new(launchPoint.X, currentRecord.TopY + 3, launchPoint.Z)
+            local landingPosition = Vector3.new(target.Part.Position.X, target.TopY + 3, target.Part.Position.Z)
+
+            humanoid:MoveTo(launchPosition)
+            local approachDeadline = os.clock() + 3
+            local reachedLaunch = false
+            while os.clock() < approachDeadline and humanoid.Health > 0 and alive[bot] do
+                local delta = Vector3.new(root.Position.X - launchPosition.X, 0, root.Position.Z - launchPosition.Z)
+                if delta.Magnitude <= 1.35 then
+                    reachedLaunch = true
+                    break
                 end
-                local direction = flatOffset.Unit
+                if platformBelow() ~= currentRecord then break end
+                task.wait(0.08)
+            end
 
-                local function edgeDistance(part)
-                    local dx = math.abs(direction.X)
-                    local dz = math.abs(direction.Z)
-                    local alongX = dx > 0.001 and (part.Size.X * 0.5 - 1.0) / dx or math.huge
-                    local alongZ = dz > 0.001 and (part.Size.Z * 0.5 - 1.0) / dz or math.huge
-                    return math.max(0, math.min(alongX, alongZ))
-                end
+            if reachedLaunch and humanoid.Health > 0 and alive[bot]
+                and platformBelow() == currentRecord
+                and humanoid.FloorMaterial ~= Enum.Material.Air then
 
-                local launchPoint, landingPoint
-                if flatOffset.Magnitude <= 6.2 then
-                    -- Close, vertically stacked pads need a straight hop, not an edge-to-edge run.
-                    launchPoint = currentRecord.Part.Position
-                    landingPoint = target.Part.Position
-                else
-                    launchPoint = currentRecord.Part.Position + direction * edgeDistance(currentRecord.Part)
-                    landingPoint = target.Part.Position - direction * edgeDistance(target.Part)
-                end
-                local launchPosition = Vector3.new(launchPoint.X, currentRecord.TopY + 3, launchPoint.Z)
-                local landingPosition = Vector3.new(landingPoint.X, target.TopY + 3, landingPoint.Z)
+                humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+                task.wait(0.05)
+                humanoid:MoveTo(landingPosition)
 
-                humanoid:MoveTo(launchPosition)
-                local approachDeadline = os.clock() + 3
-                while os.clock() < approachDeadline and humanoid.Health > 0 and alive[bot] do
-                    local delta = Vector3.new(root.Position.X - launchPosition.X, 0, root.Position.Z - launchPosition.Z)
-                    if delta.Magnitude <= 1.25 then break end
-                    if platformBelow(root) ~= currentRecord then break end
-                    task.wait(0.08)
-                end
-
-                if humanoid.Health > 0 and alive[bot] and platformBelow(root) == currentRecord then
-                    local groundedDeadline = os.clock() + 0.7
-                    while os.clock() < groundedDeadline and humanoid.Health > 0 and alive[bot] do
-                        if humanoid.FloorMaterial ~= Enum.Material.Air then break end
-                        task.wait(0.05)
-                    end
-
-                    if humanoid.FloorMaterial ~= Enum.Material.Air and platformBelow(root) == currentRecord then
-                        humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-                        task.wait(0.04)
-                        humanoid:MoveTo(landingPosition)
-                    end
-
-                    if not waitForLanding(root, target, 3.5) then
-                        -- Do not assume a jump succeeded. Recover on the current platform
-                        -- and retry from a grounded state on the next AI iteration.
-                        local recovery = currentRecord.Part.Position + Vector3.new(0, currentRecord.TopY - currentRecord.Part.Position.Y + 3, 0)
-                        humanoid:MoveTo(recovery)
-                        local recoveryDeadline = os.clock() + 1.8
-                        while os.clock() < recoveryDeadline and humanoid.Health > 0 and alive[bot] do
-                            if platformBelow(root) == currentRecord and humanoid.FloorMaterial ~= Enum.Material.Air then
-                                break
-                            end
-                            task.wait(0.08)
+                if not waitForLanding(target, 3.5) then
+                    -- Recover toward the center of the takeoff pad. Do not
+                    -- pretend the jump succeeded; retry only after grounding.
+                    local recovery = Vector3.new(
+                        currentRecord.Part.Position.X,
+                        currentRecord.TopY + 3,
+                        currentRecord.Part.Position.Z
+                    )
+                    humanoid:MoveTo(recovery)
+                    local recoveryDeadline = os.clock() + 2
+                    while os.clock() < recoveryDeadline and humanoid.Health > 0 and alive[bot] do
+                        if platformBelow() == currentRecord and humanoid.FloorMaterial ~= Enum.Material.Air then
+                            break
                         end
+                        task.wait(0.08)
                     end
                 end
             else
-                task.wait(0.2)
+                -- The approach timed out or the bot was not grounded. Recenter
+                -- instead of issuing a blind jump from the platform edge.
+                humanoid:MoveTo(Vector3.new(
+                    currentRecord.Part.Position.X,
+                    currentRecord.TopY + 3,
+                    currentRecord.Part.Position.Z
+                ))
+                task.wait(0.25)
             end
             task.wait(0.12)
         end
