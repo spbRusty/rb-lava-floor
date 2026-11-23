@@ -451,6 +451,7 @@ local function buildArena()
     local formationCenter = Vector2.new(math.cos(rotationAngle), math.sin(rotationAngle)) * 9.5
     local formationPhase = rotationAngle
     local previousLayerRecords = {generatedPlatforms[1]}
+    local firstLayerRecords = nil
 
     for layer = 1, layerCount do
         currentLayerY += rng:NextNumber(3.9, 4.2)
@@ -504,30 +505,38 @@ local function buildArena()
             table.insert(generatedPlatforms, record)
         end
 
-        -- Verify the generated route graph. The bounded formation geometry
-        -- should give every non-final pad at least two next-layer choices.
-        if layer > 1 then
+        -- Verify actual edge-to-edge gaps, not just center distances.
+        -- At least two successors must be reachable from every non-final pad.
+        if layer == 1 then
+            firstLayerRecords = layerRecords
+        else
             for _, previous in ipairs(previousLayerRecords) do
                 local reachable = 0
                 for _, candidate in ipairs(layerRecords) do
                     local delta = candidate.Part.Position - previous.Part.Position
                     local horizontal = Vector3.new(delta.X, 0, delta.Z).Magnitude
-                    if horizontal <= 13.5 then reachable += 1 end
+                    local edgeGap = horizontal
+                        - math.min(previous.Part.Size.X, previous.Part.Size.Z) * 0.5
+                        - math.min(candidate.Part.Size.X, candidate.Part.Size.Z) * 0.5
+                    if edgeGap <= 7.5 then reachable += 1 end
                 end
                 if reachable < 2 then
-                    warn(string.format("[FloorIsLava] Route validation: layer %d lane %d has only %d successors", previous.Layer, previous.Lane, reachable))
+                    warn(string.format("[FloorIsLava] Route validation: layer %d lane %d has only %d reachable successors", previous.Layer, previous.Lane, reachable))
                 end
             end
         end
         previousLayerRecords = layerRecords
     end
 
-    -- The starting platform must also connect to the first route layer.
-    for _, firstPad in ipairs(previousLayerRecords) do
+    -- Check the first jumps from the 14-stud starting platform as well.
+    for _, firstPad in ipairs(firstLayerRecords or {}) do
         local delta = firstPad.Part.Position - base.Position
         local horizontal = Vector3.new(delta.X, 0, delta.Z).Magnitude
-        if horizontal > 16.5 then
-            warn(string.format("[FloorIsLava] Start jump is too long for lane %d: %.1f studs", firstPad.Lane, horizontal))
+        local edgeGap = horizontal
+            - math.min(base.Size.X, base.Size.Z) * 0.5
+            - math.min(firstPad.Part.Size.X, firstPad.Part.Size.Z) * 0.5
+        if edgeGap > 7.5 then
+            warn(string.format("[FloorIsLava] Start jump is too long for lane %d: %.1f studs edge gap", firstPad.Lane, edgeGap))
         end
     end
 
@@ -872,13 +881,21 @@ local function runBotAI(bot)
                 continue
             end
 
+            if humanoid.FloorMaterial == Enum.Material.Air then
+                task.wait(0.1)
+                continue
+            end
+
             local options = {}
             for _, record in ipairs(generatedPlatforms) do
                 if record.Layer == currentRecord.Layer + 1 then
                     local offset = record.Part.Position - currentRecord.Part.Position
                     local horizontal = Vector3.new(offset.X, 0, offset.Z).Magnitude
-                    if horizontal <= 13.5 then
-                        table.insert(options, {Record = record, Distance = horizontal})
+                    local edgeGap = horizontal
+                        - math.min(currentRecord.Part.Size.X, currentRecord.Part.Size.Z) * 0.5
+                        - math.min(record.Part.Size.X, record.Part.Size.Z) * 0.5
+                    if edgeGap <= 7.5 then
+                        table.insert(options, {Record = record, Distance = edgeGap})
                     end
                 end
             end
@@ -905,7 +922,8 @@ local function runBotAI(bot)
             local direction = flatOffset.Unit
             local launchPoint = edgePoint(currentRecord.Part, direction, 1.15)
             local launchPosition = Vector3.new(launchPoint.X, currentRecord.TopY + 3, launchPoint.Z)
-            local landingPosition = Vector3.new(target.Part.Position.X, target.TopY + 3, target.Part.Position.Z)
+            local landingPoint = edgePoint(target.Part, -direction, 1.15)
+            local landingPosition = Vector3.new(landingPoint.X, target.TopY + 3, landingPoint.Z)
 
             humanoid:MoveTo(launchPosition)
             local approachDeadline = os.clock() + 3
