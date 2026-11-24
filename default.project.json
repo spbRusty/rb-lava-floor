@@ -12,6 +12,9 @@
       "$className": "ServerScriptService",
       "GameServer": {
         "$path": "src/ServerScriptService/GameServer.server.lua"
+      },
+      "Modules": {
+        "$path": "src/ServerScriptService/Modules"
       }
     },
     "StarterPlayer": {
